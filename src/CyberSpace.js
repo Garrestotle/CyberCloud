@@ -3,12 +3,15 @@ var KEYCODE_LEFT = 37;
 var KEYCODE_UP = 38;
 var KEYCODE_RIGHT = 39;
 var KEYCODE_DOWN = 40;
-var KEYCODE_a = 65;
-var KEYCODE_s = 83;
+//var KEYCODE_a = 65;
+//var KEYCODE_s = 83;
 var KEYCODE_ESC = 27;
 
 var canWidth = 800;
 var canHeight = 450;
+
+var CyberCloud = {};
+var player;
 
 function init(){
 	var stage = new PIXI.Stage(0x000);
@@ -26,8 +29,8 @@ function init(){
 		playerShipTextures.push(PIXI.Texture.fromFrame("PlayerShip.png"));
 		playerShipTextures.push(PIXI.Texture.fromFrame("PlayerShipGo.png"));
 
-		background = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/StarField.png'),800,500);
-		lessBackBackground = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/starFieldCloseAlph.png'),800,500);
+		CyberCloud.background = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/StarField.png'),800,500);
+		CyberCloud.lessBackBackground = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/starFieldCloseAlph.png'),800,500);
 
 		var planet = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/Planet.png'));
 		planet.anchor.x = 0.5;
@@ -35,21 +38,21 @@ function init(){
 		planet.position.x = 1000;
 		planet.position.y = 1000;
 
-		rock = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/rock.png'));
+		var rock = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/rock.png'));
 
 		rock.anchor.x = 0.5;
 		rock.anchor.y = 0.5;
 		rock.position.x = canWidth/2;
 		rock.position.y = -100;
-		//rock.radius = 50;
 
-		spaceRock = new floatingSpaceObject(rock, 50);
 
-		gameLevel = new PIXI.DisplayObjectContainer();
-		//gameLevel.width = 10000;
-		//gameLevel.height = 10000;
+		CyberCloud.spaceRock = new floatingSpaceObject(rock, 50);
 
-		ship = new PIXI.MovieClip(playerShipTextures);
+		CyberCloud.gameLevel = new PIXI.DisplayObjectContainer();
+		//CyberCloud.gameLevel.width = 10000;
+		//CyberCloud.gameLevel.height = 10000;
+
+		var ship = new PIXI.MovieClip(playerShipTextures);
 
 		ship.anchor.x = 0.5;
 		ship.anchor.y = 0.5;
@@ -57,14 +60,14 @@ function init(){
 		ship.position.y = canHeight/2;
 
 		ship.gotoAndStop(0);
-		gameLevel.addChild(planet);
-		gameLevel.addChild(ship);
-		gameLevel.addChild(rock);
+		CyberCloud.gameLevel.addChild(planet);
+		CyberCloud.gameLevel.addChild(ship);
+		CyberCloud.gameLevel.addChild(rock);
 
 
-		stage.addChild(background);
-		stage.addChild(lessBackBackground);
-		stage.addChild(gameLevel);
+		stage.addChild(CyberCloud.background);
+		stage.addChild(CyberCloud.lessBackBackground);
+		stage.addChild(CyberCloud.gameLevel);
 
 		player = new playerShip(ship);
 
@@ -80,8 +83,8 @@ function init(){
 	function animate(){
 		requestAnimationFrame(animate);
 		player.update();
-		spaceRock.update();
-		if(didCollide(player.radius, player.sprite.position.x, player.sprite.position.y, spaceRock.radius, spaceRock.sprite.position.x, spaceRock.sprite.position.y)) calculateCollision(player, spaceRock);
+		CyberCloud.spaceRock.update();
+		if(didCollide(player.radius, player.sprite.position.x, player.sprite.position.y, CyberCloud.spaceRock.radius, CyberCloud.spaceRock.sprite.position.x, CyberCloud.spaceRock.sprite.position.y)) calculateCollision(player, CyberCloud.spaceRock);
 		renderer.render(stage);
 	}
 
@@ -169,12 +172,12 @@ function playerShip(sprite){
 	this.update_position = function(){
 		this.sprite.position.x += this.velocity_x;
 		this.sprite.position.y += this.velocity_y;
-		background.tilePosition.x -= this.velocity_x/10;
-		background.tilePosition.y -= this.velocity_y/10;
-		lessBackBackground.tilePosition.x -= this.velocity_x/5;
-		lessBackBackground.tilePosition.y -= this.velocity_y/5;
-		gameLevel.position.x -= this.velocity_x;
-		gameLevel.position.y -= this.velocity_y;
+		CyberCloud.background.tilePosition.x -= this.velocity_x/10;
+		CyberCloud.background.tilePosition.y -= this.velocity_y/10;
+		CyberCloud.lessBackBackground.tilePosition.x -= this.velocity_x/5;
+		CyberCloud.lessBackBackground.tilePosition.y -= this.velocity_y/5;
+		CyberCloud.gameLevel.position.x -= this.velocity_x;
+		CyberCloud.gameLevel.position.y -= this.velocity_y;
 	};
 	/*
 	this.screen_wrap = function(){
