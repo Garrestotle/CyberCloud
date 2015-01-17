@@ -42,7 +42,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(500);
+		createRocks(1000);
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -60,10 +60,11 @@ function init(){
 
 		CyberCloud.gameLevel.addChild(planet);
 		CyberCloud.gameLevel.addChild(ship);
-		//console.log('Adding rocks to gameLevel'+ CyberCloud.spaceRocks);
+
 		for (var rock in CyberCloud.spaceRocks){
-			//console.log('Adding rock: '+key);
-			CyberCloud.gameLevel.addChild(CyberCloud.spaceRocks[rock].sprite);
+			if(CyberCloud.spaceRocks.hasOwnProperty(rock)){
+				CyberCloud.gameLevel.addChild(CyberCloud.spaceRocks[rock].sprite);
+			}
 		}
 		CyberCloud.gameLevel.addChild(fireWall);
 
@@ -71,7 +72,7 @@ function init(){
 		stage.addChild(CyberCloud.lessBackBackground);
 		stage.addChild(CyberCloud.gameLevel);
 
-		CyberCloud.player = new playerShip(ship);
+		CyberCloud.player = new PlayerShip(ship);
 
 		requestAnimationFrame(animate);
 		window.addEventListener('keydown',function(e){
@@ -84,17 +85,30 @@ function init(){
 
 	function animate(){
 		requestAnimationFrame(animate);
-		CyberCloud.player.update();
-		//CyberCloud.spaceRock.update();
-		//console.log('animating');
+		/*
+		var spaceRocksToCheck = [];
 		for(var rock in CyberCloud.spaceRocks){
-			//console.log("animating rock: "+rock);
-			CyberCloud.spaceRocks[rock].update();
-			if(didCollide(CyberCloud.player, CyberCloud.spaceRocks[rock]))
-				calculateCollision(CyberCloud.player, CyberCloud.spaceRocks[rock]);
-			didItHitAWall(CyberCloud.spaceRocks[rock]);
+			spaceRocksToCheck.push(CyberCloud.spaceRocks[rock]);
 		}
+		*/
+		for(var rock in CyberCloud.spaceRocks){
+			if(CyberCloud.spaceRocks.hasOwnProperty(rock)){
+				if(didCollide(CyberCloud.player, CyberCloud.spaceRocks[rock]))
+					calculateCollision(CyberCloud.player, CyberCloud.spaceRocks[rock]);
+				didItHitAWall(CyberCloud.spaceRocks[rock]);/*
+				for (var otherRock in spaceRocksToCheck){
+					if(didCollide(spaceRocksToCheck[otherRock], CyberCloud.spaceRocks[rock]))
+						calculateCollision(spaceRocksToCheck[otherRock], CyberCloud.spaceRocks[rock]);
+				}
+				spaceRocksToCheck.splice(rock,1);
+				*/
+				CyberCloud.spaceRocks[rock].update();
+			}
+		}
+
+		CyberCloud.player.update();
 		didItHitAWall(CyberCloud.player);
+
 		renderer.render(stage);
 	}
 
@@ -107,8 +121,8 @@ function createRocks(numberOfRocks){
 		rock.anchor.y = 0.5;
 		rock.position.x = getRandomInt(CyberCloud.gameLevel.levelWidth-50,50);
 		rock.position.y = getRandomInt(CyberCloud.gameLevel.levelHeight-50,50);
-		CyberCloud.spaceRocks.push(new floatingSpaceObject(rock, 50));
-		console.log('Space rock created');
+		CyberCloud.spaceRocks.push(new FloatingSpaceObject(rock, 50));
+		//console.log('Space rock created');
 	}
 }
 function getRandomInt(min, max) {
@@ -177,7 +191,7 @@ function didItHitAWall(it){
 		calculateCollision(it,wall);
 	}
 }
-function floatingSpaceObject(sprite, radius){
+function FloatingSpaceObject(sprite, radius){
 	this.velocity_x = 0;
 	this.velocity_y = 0;
 	this.radius = radius;
@@ -215,7 +229,7 @@ function floatingSpaceObject(sprite, radius){
 
 }
 
-function playerShip(sprite){
+function PlayerShip(sprite){
 
 	this.sprite = sprite;
 
@@ -284,7 +298,7 @@ this.update = function(){
 
 };
 }
-playerShip.prototype = new floatingSpaceObject();
+PlayerShip.prototype = new FloatingSpaceObject();
 function radiansToDegrees(radians){
 	return radians*(180/Math.PI);
 }
