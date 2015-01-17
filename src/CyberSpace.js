@@ -1,3 +1,4 @@
+"use strict";
 //Save some useful key codes for later, so I don't  have to remember the random number
 var KEYCODE_LEFT = 37;
 var KEYCODE_UP = 38;
@@ -9,9 +10,10 @@ var KEYCODE_ESC = 27;
 
 var canWidth = 800;
 var canHeight = 450;
+var levelWidth
+var levelH
 
 var CyberCloud = {};
-var player;
 
 function init(){
 	var stage = new PIXI.Stage(0x000);
@@ -23,7 +25,6 @@ function init(){
 	loader.onComplete = onAssetsLoaded;
 	loader.load();
 
-
 	function onAssetsLoaded(){
 		var playerShipTextures = [];
 		playerShipTextures.push(PIXI.Texture.fromFrame("PlayerShip.png"));
@@ -31,6 +32,10 @@ function init(){
 
 		CyberCloud.background = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/StarField.png'),800,500);
 		CyberCloud.lessBackBackground = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/starFieldCloseAlph.png'),800,500);
+
+		CyberCloud.gameLevel = new PIXI.DisplayObjectContainer();
+		CyberCloud.gameLevel.levelWidth = 10000;
+		CyberCloud.gameLevel.levelHeight = 10000;
 
 		var planet = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/Planet.png'));
 		planet.anchor.x = 0.5;
@@ -43,59 +48,65 @@ function init(){
 		rock.anchor.x = 0.5;
 		rock.anchor.y = 0.5;
 		rock.position.x = canWidth/2;
-		rock.position.y = -100;
-
+		rock.position.y = 100;
 
 		CyberCloud.spaceRock = new floatingSpaceObject(rock, 50);
 
-		CyberCloud.gameLevel = new PIXI.DisplayObjectContainer();
-		//CyberCloud.gameLevel.width = 10000;
-		//CyberCloud.gameLevel.height = 10000;
+
+		var fireWall = new PIXI.Graphics();
+		fireWall.lineStyle(30, 0xCC0000);
+		fireWall.drawRect(0, 0, CyberCloud.gameLevel.levelWidth, CyberCloud.gameLevel.levelHeight);
 
 		var ship = new PIXI.MovieClip(playerShipTextures);
+
+
 
 		ship.anchor.x = 0.5;
 		ship.anchor.y = 0.5;
 		ship.position.x = canWidth/2;
 		ship.position.y = canHeight/2;
-
 		ship.gotoAndStop(0);
+
 		CyberCloud.gameLevel.addChild(planet);
 		CyberCloud.gameLevel.addChild(ship);
 		CyberCloud.gameLevel.addChild(rock);
-
+		CyberCloud.gameLevel.addChild(fireWall);
 
 		stage.addChild(CyberCloud.background);
 		stage.addChild(CyberCloud.lessBackBackground);
 		stage.addChild(CyberCloud.gameLevel);
 
-		player = new playerShip(ship);
+		CyberCloud.player = new playerShip(ship);
 
 		requestAnimationFrame(animate);
 		window.addEventListener('keydown',function(e){
-			handleKeyDown(e,player);
+			handleKeyDown(e);
 		});
 		window.addEventListener('keyup', function(e){
-			handleKeyUp(e,player);
+			handleKeyUp(e);
 		});
 	}
 
 	function animate(){
 		requestAnimationFrame(animate);
-		player.update();
+		CyberCloud.player.update();
 		CyberCloud.spaceRock.update();
-		if(didCollide(player.radius, player.sprite.position.x, player.sprite.position.y, CyberCloud.spaceRock.radius, CyberCloud.spaceRock.sprite.position.x, CyberCloud.spaceRock.sprite.position.y)) calculateCollision(player, CyberCloud.spaceRock);
+		if(didCollide(CyberCloud.player, CyberCloud.spaceRock))
+			calculateCollision(CyberCloud.player, CyberCloud.spaceRock);
+		didItHitAWall(CyberCloud.player);
+		didItHitAWall(CyberCloud.spaceRock);
 		renderer.render(stage);
 	}
 
 }
 
-function didCollide(radius1, x1, y1, radius2, x2, y2){
-	var dist = Math.sqrt(Math.pow(x2-x1,2)+Math.pow(y2-y1,2));
-	var radii = radius1 + radius2;
-	//console.log(Math.pow(x2-x1,2)-Math.pow(y2-y1,2));
+function didCollide(thing1, thing2){
+	var xDiff = Math.pow(thing2.sprite.position.x-thing1.sprite.position.x,2);
+	var yDiff = Math.pow(thing2.sprite.position.y-thing1.sprite.position.y,2);
+	var dist = Math.sqrt(xDiff+yDiff);
+	var radii = thing1.radius + thing2.radius;
 	if(dist <= radii) return true;
-	else return false;
+		else return false;
 }
 function calculateCollision(moving,still){
 	if(moving.velocity_x === 0 && moving.velocity_y === 0) {
@@ -112,19 +123,52 @@ function calculateCollision(moving,still){
 	var movingVelocity = Math.sqrt(Math.pow(moving.velocity_x,2)+Math.pow(moving.velocity_y,2));
 	var v1 = ((moving.mass - still.mass)*movingVelocity)/(moving.mass+still.mass);//resulting velocity of moving
 	var v2 = (2*moving.mass*movingVelocity)/(moving.mass+still.mass);//Resulting velocity of still
+	/*
 	console.log("Calculate Collision!");
 	console.log("angle Ship: "+radiansToDegrees(angleMovingBouncesOffIn)+" Velocity ship is pushed off in: "+v1);
 	console.log("angle rock: "+radiansToDegrees(angleStillIsPushedOffIn)+" Velocity rock is pushed off in: "+v2);
+	*/
 	moving.accelerate(angleMovingBouncesOffIn, v1);
 	still.accelerate(angleStillIsPushedOffIn, v2);
 }
-
+function didItHitAWall(it){
+	var wall = {
+		sprite:{
+			position:{
+				x:0,
+				y:0
+			}
+		},
+		mass : 1000000,
+		accelerate: function(herp,derp){}
+	};
+	if(it.sprite.position.x < it.radius){
+		//console.log('Wall Crash!');
+		wall.sprite.position.x = it.sprite.position.x-it.radius;
+		wall.sprite.position.y = it.sprite.position.y;
+		calculateCollision(it,wall);
+	}else if(it.sprite.position.x > CyberCloud.gameLevel.levelWidth - it.radius){
+		wall.sprite.position.x = it.sprite.position.x+it.radius;
+		wall.sprite.position.y = it.sprite.position.y;
+		calculateCollision(it,wall);
+	}
+	if(it.sprite.position.y < it.radius){
+		//console.log('Wall Crash!');
+		wall.sprite.position.y = it.sprite.position.y-it.radius;
+		wall.sprite.position.x = it.sprite.position.x;
+		calculateCollision(it,wall);
+	}else if(it.sprite.position.y > CyberCloud.gameLevel.levelHeight - it.radius){
+		wall.sprite.position.y = it.sprite.position.y+it.radius;
+		wall.sprite.position.x = it.sprite.position.x;
+		calculateCollision(it,wall);
+	}
+}
 function floatingSpaceObject(sprite, radius){
 	this.velocity_x = 0;
 	this.velocity_y = 0;
 	this.radius = radius;
 	this.sprite = sprite;
-	this.mass = 50;
+	this.mass = 100;
 
 	this.updatePosition = function(){
 		this.sprite.position.x += this.velocity_x;
@@ -179,22 +223,6 @@ function playerShip(sprite){
 		CyberCloud.gameLevel.position.x -= this.velocity_x;
 		CyberCloud.gameLevel.position.y -= this.velocity_y;
 	};
-	/*
-	this.screen_wrap = function(){
-	if (this.sprite.position.x > canWidth+10) {
-	this.sprite.position.x = 0;
-}
-else if (this.sprite.position.x < -10){
-this.sprite.position.x = canWidth;
-}
-if (this.sprite.position.y > canHeight+10) {
-this.sprite.position.y = 0;
-}
-else if (this.sprite.position.y < -10) {
-this.sprite.position.y = canHeight;
-}
-};
-*/
 this.apply_breaks = function(){
 	if (this.velocity_x > -1 && this.velocity_x < 1){
 		this.velocity_x = 0;
@@ -246,19 +274,19 @@ playerShip.prototype = new floatingSpaceObject();
 function radiansToDegrees(radians){
 	return radians*(180/Math.PI);
 }
-function handleKeyDown(e,player) {
+function handleKeyDown(e) {
 	switch (e.keyCode) {
 		case KEYCODE_RIGHT:
-			player.rotating_r = true;
+			CyberCloud.player.rotating_r = true;
 		break;
 		case KEYCODE_LEFT:
-			player.rotating_l = true;
+			CyberCloud.player.rotating_l = true;
 		break;
 		case KEYCODE_UP:
-			player.accelerating = true;
+			CyberCloud.player.accelerating = true;
 		break;
 		case KEYCODE_DOWN:
-			player.breaking = true;
+			CyberCloud.player.breaking = true;
 		break;
 		case KEYCODE_ESC:
 			//pauseMenu();
@@ -266,19 +294,19 @@ function handleKeyDown(e,player) {
 	}
 }
 //Do different things when a button is released
-function handleKeyUp(e,player) {
+function handleKeyUp(e) {
 	switch (e.keyCode) {
 		case KEYCODE_RIGHT:
-			player.rotating_r = false;
+			CyberCloud.player.rotating_r = false;
 		break;
 		case KEYCODE_LEFT:
-			player.rotating_l = false;
+			CyberCloud.player.rotating_l = false;
 		break;
 		case KEYCODE_UP:
-			player.accelerating = false;
+			CyberCloud.player.accelerating = false;
 		break;
 		case KEYCODE_DOWN:
-			player.breaking = false;
+			CyberCloud.player.breaking = false;
 		break;
 	}
 }
