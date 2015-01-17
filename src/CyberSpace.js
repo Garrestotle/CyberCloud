@@ -10,8 +10,6 @@ var KEYCODE_ESC = 27;
 
 var canWidth = 800;
 var canHeight = 450;
-var levelWidth
-var levelH
 
 var CyberCloud = {};
 
@@ -43,18 +41,11 @@ function init(){
 		planet.position.x = 1000;
 		planet.position.y = 1000;
 
-		var rock = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/rock.png'));
-
-		rock.anchor.x = 0.5;
-		rock.anchor.y = 0.5;
-		rock.position.x = canWidth/2;
-		rock.position.y = 100;
-
-		CyberCloud.spaceRock = new floatingSpaceObject(rock, 50);
-
+		CyberCloud.spaceRocks = [];
+		createRocks(500);
 
 		var fireWall = new PIXI.Graphics();
-		fireWall.lineStyle(30, 0xCC0000);
+		fireWall.lineStyle(15, 0xCC0000);
 		fireWall.drawRect(0, 0, CyberCloud.gameLevel.levelWidth, CyberCloud.gameLevel.levelHeight);
 
 		var ship = new PIXI.MovieClip(playerShipTextures);
@@ -69,7 +60,11 @@ function init(){
 
 		CyberCloud.gameLevel.addChild(planet);
 		CyberCloud.gameLevel.addChild(ship);
-		CyberCloud.gameLevel.addChild(rock);
+		//console.log('Adding rocks to gameLevel'+ CyberCloud.spaceRocks);
+		for (var rock in CyberCloud.spaceRocks){
+			//console.log('Adding rock: '+key);
+			CyberCloud.gameLevel.addChild(CyberCloud.spaceRocks[rock].sprite);
+		}
 		CyberCloud.gameLevel.addChild(fireWall);
 
 		stage.addChild(CyberCloud.background);
@@ -90,16 +85,35 @@ function init(){
 	function animate(){
 		requestAnimationFrame(animate);
 		CyberCloud.player.update();
-		CyberCloud.spaceRock.update();
-		if(didCollide(CyberCloud.player, CyberCloud.spaceRock))
-			calculateCollision(CyberCloud.player, CyberCloud.spaceRock);
+		//CyberCloud.spaceRock.update();
+		//console.log('animating');
+		for(var rock in CyberCloud.spaceRocks){
+			//console.log("animating rock: "+rock);
+			CyberCloud.spaceRocks[rock].update();
+			if(didCollide(CyberCloud.player, CyberCloud.spaceRocks[rock]))
+				calculateCollision(CyberCloud.player, CyberCloud.spaceRocks[rock]);
+			didItHitAWall(CyberCloud.spaceRocks[rock]);
+		}
 		didItHitAWall(CyberCloud.player);
-		didItHitAWall(CyberCloud.spaceRock);
 		renderer.render(stage);
 	}
 
 }
-
+function createRocks(numberOfRocks){
+	console.log('creating rocks');
+	for(var r = 0; r < numberOfRocks; r++){
+		var rock = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/rock.png'));
+		rock.anchor.x = 0.5;
+		rock.anchor.y = 0.5;
+		rock.position.x = getRandomInt(CyberCloud.gameLevel.levelWidth-50,50);
+		rock.position.y = getRandomInt(CyberCloud.gameLevel.levelHeight-50,50);
+		CyberCloud.spaceRocks.push(new floatingSpaceObject(rock, 50));
+		console.log('Space rock created');
+	}
+}
+function getRandomInt(min, max) {
+	return Math.floor(Math.random() * (max - min)) + min;
+}
 function didCollide(thing1, thing2){
 	var xDiff = Math.pow(thing2.sprite.position.x-thing1.sprite.position.x,2);
 	var yDiff = Math.pow(thing2.sprite.position.y-thing1.sprite.position.y,2);
