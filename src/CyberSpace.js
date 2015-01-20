@@ -10,6 +10,7 @@ var KEYCODE_ESC = 27;
 
 var canWidth = 800;
 var canHeight = 450;
+//var fps = 60;
 
 var CyberCloud = {};
 
@@ -32,8 +33,8 @@ function init(){
 		CyberCloud.lessBackBackground = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/starFieldCloseAlph.png'),800,500);
 
 		CyberCloud.gameLevel = new PIXI.DisplayObjectContainer();
-		CyberCloud.gameLevel.levelWidth = 10000;
-		CyberCloud.gameLevel.levelHeight = 10000;
+		CyberCloud.gameLevel.levelWidth = 2000;
+		CyberCloud.gameLevel.levelHeight = 2000;
 
 		var planet = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/Planet.png'));
 		planet.anchor.x = 0.5;
@@ -42,7 +43,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(1000);
+		createRocks(20);
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -81,37 +82,65 @@ function init(){
 		window.addEventListener('keyup', function(e){
 			handleKeyUp(e);
 		});
-	}
 
+		//console.log(sortOutWhichThingsAreInWhichSector(CyberCloud.spaceRocks));
+	}
 	function animate(){
-		requestAnimationFrame(animate);
-		/*
-		var spaceRocksToCheck = [];
-		for(var rock in CyberCloud.spaceRocks){
-			spaceRocksToCheck.push(CyberCloud.spaceRocks[rock]);
-		}
-		*/
-		for(var rock in CyberCloud.spaceRocks){
-			if(CyberCloud.spaceRocks.hasOwnProperty(rock)){
-				if(didCollide(CyberCloud.player, CyberCloud.spaceRocks[rock]))
-					calculateCollision(CyberCloud.player, CyberCloud.spaceRocks[rock]);
-				didItHitAWall(CyberCloud.spaceRocks[rock]);/*
-				for (var otherRock in spaceRocksToCheck){
-					if(didCollide(spaceRocksToCheck[otherRock], CyberCloud.spaceRocks[rock]))
-						calculateCollision(spaceRocksToCheck[otherRock], CyberCloud.spaceRocks[rock]);
+		//setTimeout(function(){
+			var sectors = sortOutWhichThingsAreInWhichSector(CyberCloud.spaceRocks);
+			for(var x = 0; x < sectors.length; x++){
+				for(var y = 0; y < sectors[x].length; y++){
+					for(var thing1 in sectors[x][y]){
+						var firstThing = true;
+						for(var thing2 in sectors[x][y]){
+							if(sectors[x][y][thing1] !==  sectors[x][y][thing2]){
+								if(didCollide(sectors[x][y][thing1],sectors[x][y][thing2])){
+									calculateCollision(sectors[x][y][thing1],sectors[x][y][thing2]);
+								}
+							}
+						}
+					}
 				}
-				spaceRocksToCheck.splice(rock,1);
-				*/
-				CyberCloud.spaceRocks[rock].update();
 			}
+			for(var rock in CyberCloud.spaceRocks){
+				if(CyberCloud.spaceRocks.hasOwnProperty(rock)){
+					if(didCollide(CyberCloud.player, CyberCloud.spaceRocks[rock]))
+						calculateCollision(CyberCloud.player, CyberCloud.spaceRocks[rock]);
+						didItHitAWall(CyberCloud.spaceRocks[rock]);
+					}
+				}
+				didItHitAWall(CyberCloud.player);
+		//},250);
+		for(var rock in CyberCloud.spaceRocks){
+			CyberCloud.spaceRocks[rock].update();
 		}
-
 		CyberCloud.player.update();
-		didItHitAWall(CyberCloud.player);
-
 		renderer.render(stage);
+		requestAnimationFrame(animate);
 	}
 
+}
+/*
+function setWhichSectorTheseThingsAreIn(things){
+	for(var thing in things){
+		things[thing].sector.x = Math.floor(things[thing].sprite.position.x/1000);
+		things[thing].sector.y = Math.floor(things[thing].sprite.position.y/1000);
+	}
+}*/
+function sortOutWhichThingsAreInWhichSector(things){
+	var sectors = [];
+	for(var x = 0; x <= Math.floor(CyberCloud.gameLevel.levelWidth/1000); x++){
+		sectors.push([]);
+		for(var y = 0; y <= Math.floor(CyberCloud.gameLevel.levelHeight/1000); y++){
+			sectors[x].push([]);
+		}
+	}
+	for(var thing in things){
+		things[thing].sector.x = Math.abs(Math.floor(things[thing].sprite.position.x/1000));
+		things[thing].sector.y = Math.abs(Math.floor(things[thing].sprite.position.y/1000));
+		sectors[things[thing].sector.x][things[thing].sector.y].push(things[thing]);
+	}
+	return sectors;
 }
 function createRocks(numberOfRocks){
 	console.log('creating rocks');
@@ -138,10 +167,16 @@ function didCollide(thing1, thing2){
 }
 function calculateCollision(moving,still){
 	if(moving.velocity_x === 0 && moving.velocity_y === 0) {
+		if(still.velocity_x === 0 && still.velocity_y === 0) {
+			return;
+		}
 		var temp = still;
 		still = moving;
 		moving = temp;
 	}
+	console.log("collision between things!");
+	//console.log(moving);
+	//console.log(still);
 	var deltaX = moving.sprite.position.x - still.sprite.position.x;
 	var deltaY = moving.sprite.position.y - still.sprite.position.y;
 
@@ -156,6 +191,12 @@ function calculateCollision(moving,still){
 	console.log("angle Ship: "+radiansToDegrees(angleMovingBouncesOffIn)+" Velocity ship is pushed off in: "+v1);
 	console.log("angle rock: "+radiansToDegrees(angleStillIsPushedOffIn)+" Velocity rock is pushed off in: "+v2);
 	*/
+	if(v1 > 50){
+		v1 = 50;
+	}
+	if(v2 > 50){
+		v2=50;
+	}
 	moving.accelerate(angleMovingBouncesOffIn, v1);
 	still.accelerate(angleStillIsPushedOffIn, v2);
 }
@@ -197,6 +238,7 @@ function FloatingSpaceObject(sprite, radius){
 	this.radius = radius;
 	this.sprite = sprite;
 	this.mass = 100;
+	this.sector = {x:0,y:0};
 
 	this.updatePosition = function(){
 		this.sprite.position.x += this.velocity_x;
