@@ -33,8 +33,8 @@ function init(){
 		CyberCloud.lessBackBackground = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/starFieldCloseAlph.png'),800,500);
 
 		CyberCloud.gameLevel = new PIXI.DisplayObjectContainer();
-		CyberCloud.gameLevel.levelWidth = 2000;
-		CyberCloud.gameLevel.levelHeight = 2000;
+		CyberCloud.gameLevel.levelWidth = 10000;
+		CyberCloud.gameLevel.levelHeight = 10000;
 
 		var planet = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/Planet.png'));
 		planet.anchor.x = 0.5;
@@ -43,7 +43,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(20);
+		createRocks(1000);
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -92,12 +92,21 @@ function init(){
 				for(var y = 0; y < sectors[x].length; y++){
 					for(var thing1 in sectors[x][y]){
 						var firstThing = true;
-						for(var thing2 in sectors[x][y]){
-							if(sectors[x][y][thing1] !==  sectors[x][y][thing2]){
-								if(didCollide(sectors[x][y][thing1],sectors[x][y][thing2])){
-									calculateCollision(sectors[x][y][thing1],sectors[x][y][thing2]);
+						if(!sectors[x][y][thing1].isColliding){
+							for(var thing2 in sectors[x][y]){
+								if(sectors[x][y][thing1] !==  sectors[x][y][thing2]){
+									if(didCollide(sectors[x][y][thing1],sectors[x][y][thing2])){
+										sectors[x][y][thing1].isColliding = true;
+										sectors[x][y][thing1].isCollidingWith = sectors[x][y][thing2];
+										sectors[x][y][thing2].isColliding = true;
+										sectors[x][y][thing2].isCollidingWith = sectors[x][y][thing1];
+										calculateCollision(sectors[x][y][thing1],sectors[x][y][thing2]);
+									}
 								}
 							}
+						}else if(!didCollide(sectors[x][y][thing1],sectors[x][y][thing1].isCollidingWith)){
+							sectors[x][y][thing1].isColliding = false;
+							sectors[x][y][thing1].isCollidingWith.isColliding = false;
 						}
 					}
 				}
@@ -174,7 +183,7 @@ function calculateCollision(moving,still){
 		still = moving;
 		moving = temp;
 	}
-	console.log("collision between things!");
+	//console.log("collision between things!");
 	//console.log(moving);
 	//console.log(still);
 	var deltaX = moving.sprite.position.x - still.sprite.position.x;
@@ -191,11 +200,11 @@ function calculateCollision(moving,still){
 	console.log("angle Ship: "+radiansToDegrees(angleMovingBouncesOffIn)+" Velocity ship is pushed off in: "+v1);
 	console.log("angle rock: "+radiansToDegrees(angleStillIsPushedOffIn)+" Velocity rock is pushed off in: "+v2);
 	*/
-	if(v1 > 50){
-		v1 = 50;
+	if(v1 > 10){
+		v1 = 10;
 	}
-	if(v2 > 50){
-		v2=50;
+	if(v2 > 10){
+		v2=10;
 	}
 	moving.accelerate(angleMovingBouncesOffIn, v1);
 	still.accelerate(angleStillIsPushedOffIn, v2);
@@ -239,6 +248,8 @@ function FloatingSpaceObject(sprite, radius){
 	this.sprite = sprite;
 	this.mass = 100;
 	this.sector = {x:0,y:0};
+	this.isColliding = false;
+	this.isCollidingWith = null;
 
 	this.updatePosition = function(){
 		this.sprite.position.x += this.velocity_x;
