@@ -157,12 +157,23 @@ function createRocks(numberOfRocks){
 		var rock = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/rock.png'));
 		rock.anchor.x = 0.5;
 		rock.anchor.y = 0.5;
-		rock.position.x = getRandomInt(CyberCloud.gameLevel.levelWidth-50,50);
-		rock.position.y = getRandomInt(CyberCloud.gameLevel.levelHeight-50,50);
 		var newRock = new FloatingSpaceObject(rock, 50);
 		newRock.velocity_x = getRandomInt(0,50);
 		newRock.velocity_y = getRandomInt(0,50);
 		newRock.mass = getRandomInt(50,300);
+
+		do{
+			//console.log(r);
+			var overlap = false;
+			newRock.sprite.position.x = getRandomInt(CyberCloud.gameLevel.levelWidth-50,50);
+			newRock.sprite.position.y = getRandomInt(CyberCloud.gameLevel.levelHeight-50,50);
+			for(var oldRock in CyberCloud.spaceRocks){
+				if(didCollide(newRock,CyberCloud.spaceRocks[oldRock])){
+					overlap = true;
+				}
+			}
+		}while(overlap)
+
 		CyberCloud.spaceRocks.push(newRock);
 
 	}
