@@ -7,6 +7,7 @@ var KEYCODE_DOWN = 40;
 //var KEYCODE_a = 65;
 //var KEYCODE_s = 83;
 var KEYCODE_ESC = 27;
+var KEYCODE_CTRL = 17;
 
 var canWidth = 800;
 var canHeight = 450;
@@ -303,7 +304,7 @@ function FloatingSpaceObject(sprite, radius){
 function PlayerShip(sprite){
 
 	this.sprite = sprite;
-
+	this.nitroCoolDown = 0;
 	this.acceleration_rate = 150;
 	this.rotating_l = false;
 	this.rotating_r = false;
@@ -354,8 +355,16 @@ this.spin_ship = function(){
 	}
 
 };
+this.nitro = function(){
+	if(this.nitroCoolDown <= 0){
+		this.nitroCoolDown = 5;
+		this.accelerate(this.sprite.rotation,this.acceleration_rate*5);
+	}
+};
 this.update = function(){
-
+	if(this.nitroCoolDown > 0){
+		this.nitroCoolDown -= CyberCloud.delta;
+	}
 	if(this.rotating_l || this.rotating_r){
 		this.spin_ship();
 	}
@@ -392,6 +401,9 @@ function handleKeyDown(e) {
 		break;
 		case KEYCODE_ESC:
 			//pauseMenu();
+		break;
+		case KEYCODE_CTRL:
+			CyberCloud.player.nitro();
 		break;
 	}
 }
