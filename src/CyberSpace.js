@@ -43,7 +43,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(1000);
+		createRocks(250);
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -83,10 +83,9 @@ function init(){
 			handleKeyUp(e);
 		});
 
-		//console.log(sortOutWhichThingsAreInWhichSector(CyberCloud.spaceRocks));
 	}
 	function animate(){
-		//setTimeout(function(){
+			calculateDelta();
 			var sectors = sortOutWhichThingsAreInWhichSector(CyberCloud.spaceRocks);
 			for(var x = 0; x < sectors.length; x++){
 				for(var y = 0; y < sectors[x].length; y++){
@@ -119,7 +118,7 @@ function init(){
 					}
 				}
 				didItHitAWall(CyberCloud.player);
-		//},250);
+
 		for(var rock in CyberCloud.spaceRocks){
 			CyberCloud.spaceRocks[rock].update();
 		}
@@ -129,13 +128,14 @@ function init(){
 	}
 
 }
-/*
-function setWhichSectorTheseThingsAreIn(things){
-	for(var thing in things){
-		things[thing].sector.x = Math.floor(things[thing].sprite.position.x/1000);
-		things[thing].sector.y = Math.floor(things[thing].sprite.position.y/1000);
-	}
-}*/
+CyberCloud.thisFrame = Date.now();
+CyberCloud.lastFrame = Date.now();
+CyberCloud.delta = 0;
+function calculateDelta(){
+	CyberCloud.thisFrame = Date.now();
+	CyberCloud.delta = (CyberCloud.thisFrame - CyberCloud.lastFrame) / 1000;
+	CyberCloud.lastFrame = CyberCloud.thisFrame;
+}
 function sortOutWhichThingsAreInWhichSector(things){
 	var sectors = [];
 	for(var x = 0; x <= Math.floor(CyberCloud.gameLevel.levelWidth/1000); x++){
@@ -159,8 +159,12 @@ function createRocks(numberOfRocks){
 		rock.anchor.y = 0.5;
 		rock.position.x = getRandomInt(CyberCloud.gameLevel.levelWidth-50,50);
 		rock.position.y = getRandomInt(CyberCloud.gameLevel.levelHeight-50,50);
-		CyberCloud.spaceRocks.push(new FloatingSpaceObject(rock, 50));
-		//console.log('Space rock created');
+		var newRock = new FloatingSpaceObject(rock, 50);
+		newRock.velocity_x = getRandomInt(0,50);
+		newRock.velocity_y = getRandomInt(0,50);
+		newRock.mass = getRandomInt(50,300);
+		CyberCloud.spaceRocks.push(newRock);
+
 	}
 }
 function getRandomInt(min, max) {
@@ -200,12 +204,14 @@ function calculateCollision(moving,still){
 	console.log("angle Ship: "+radiansToDegrees(angleMovingBouncesOffIn)+" Velocity ship is pushed off in: "+v1);
 	console.log("angle rock: "+radiansToDegrees(angleStillIsPushedOffIn)+" Velocity rock is pushed off in: "+v2);
 	*/
+
 	if(v1 > 10){
 		v1 = 10;
 	}
 	if(v2 > 10){
 		v2=10;
 	}
+
 	moving.accelerate(angleMovingBouncesOffIn, v1);
 	still.accelerate(angleStillIsPushedOffIn, v2);
 }
@@ -252,8 +258,8 @@ function FloatingSpaceObject(sprite, radius){
 	this.isCollidingWith = null;
 
 	this.updatePosition = function(){
-		this.sprite.position.x += this.velocity_x;
-		this.sprite.position.y += this.velocity_y;
+		this.sprite.position.x += this.velocity_x * CyberCloud.delta;
+		this.sprite.position.y += this.velocity_y * CyberCloud.delta;
 	};
 	this.deg_conv = function(angle){
 		if (angle < 0){
@@ -266,6 +272,7 @@ function FloatingSpaceObject(sprite, radius){
 		return angle;
 	};
 	this.accelerate = function(directionInRadians, acceleration){
+		//acceleration = acceleration * CyberCloud.delta;
 		var degree = radiansToDegrees(directionInRadians);
 		degree = this.deg_conv(degree);
 
@@ -286,7 +293,7 @@ function PlayerShip(sprite){
 
 	this.sprite = sprite;
 
-	this.acceleration_rate = 0.1;
+	this.acceleration_rate = 150;
 	this.rotating_l = false;
 	this.rotating_r = false;
 	this.accelerating = false;
@@ -295,41 +302,44 @@ function PlayerShip(sprite){
 	this.mass = 10;
 
 	this.update_position = function(){
-		this.sprite.position.x += this.velocity_x;
-		this.sprite.position.y += this.velocity_y;
-		CyberCloud.background.tilePosition.x -= this.velocity_x/10;
-		CyberCloud.background.tilePosition.y -= this.velocity_y/10;
-		CyberCloud.lessBackBackground.tilePosition.x -= this.velocity_x/5;
-		CyberCloud.lessBackBackground.tilePosition.y -= this.velocity_y/5;
-		CyberCloud.gameLevel.position.x -= this.velocity_x;
-		CyberCloud.gameLevel.position.y -= this.velocity_y;
+		var velocityX = this.velocity_x * CyberCloud.delta;
+		var velocityY = this.velocity_y * CyberCloud.delta;
+		this.sprite.position.x += velocityX;
+		this.sprite.position.y += velocityY;
+		CyberCloud.background.tilePosition.x -= velocityX/10;
+		CyberCloud.background.tilePosition.y -= velocityY/10;
+		CyberCloud.lessBackBackground.tilePosition.x -= velocityX/5;
+		CyberCloud.lessBackBackground.tilePosition.y -= velocityY/5;
+		CyberCloud.gameLevel.position.x -= velocityX;
+		CyberCloud.gameLevel.position.y -= velocityY;
 	};
 this.apply_breaks = function(){
-	if (this.velocity_x > -1 && this.velocity_x < 1){
+	var breakSpeed = this.acceleration_rate * CyberCloud.delta * 2;
+	if (this.velocity_x > -(breakSpeed) && this.velocity_x < breakSpeed){
 		this.velocity_x = 0;
 	}
-	if (this.velocity_y > -1 && this.velocity_y < 1){
+	if (this.velocity_y > -(breakSpeed) && this.velocity_y < breakSpeed){
 		this.velocity_y = 0;
 	}
 	if ( 0 > this.velocity_x){
-		this.velocity_x += this.acceleration_rate;
+		this.velocity_x += breakSpeed;
 	}
 	else if ( 0 < this.velocity_x){
-		this.velocity_x -= this.acceleration_rate;
+		this.velocity_x -= breakSpeed;
 	}
 	if ( 0 > this.velocity_y){
-		this.velocity_y += this.acceleration_rate;
+		this.velocity_y += breakSpeed;
 	}
 	else if ( 0 < this.velocity_y){
-		this.velocity_y -= this.acceleration_rate;
+		this.velocity_y -= breakSpeed;
 	}
 };
 this.spin_ship = function(){
 	if (this.rotating_l){
-		this.sprite.rotation -= 0.1;
+		this.sprite.rotation -= 4 * CyberCloud.delta;
 	}
 	if (this.rotating_r){
-		this.sprite.rotation += 0.1;
+		this.sprite.rotation += 4 * CyberCloud.delta;
 	}
 
 };
@@ -342,7 +352,7 @@ this.update = function(){
 		this.apply_breaks();
 	}
 	if(this.accelerating){
-		this.accelerate(this.sprite.rotation, this.acceleration_rate);
+		this.accelerate(this.sprite.rotation, this.acceleration_rate * CyberCloud.delta);
 		this.sprite.gotoAndStop(1);
 	}
 	else this.sprite.gotoAndStop(0);
