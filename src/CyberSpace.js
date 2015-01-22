@@ -44,7 +44,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(250);
+		createRocks(950);
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -88,6 +88,7 @@ function init(){
 	function animate(){
 			calculateDelta();
 			var sectors = sortOutWhichThingsAreInWhichSector(CyberCloud.spaceRocks);
+
 			for(var x = 0; x < sectors.length; x++){
 				for(var y = 0; y < sectors[x].length; y++){
 					for(var thing1 in sectors[x][y]){
@@ -111,14 +112,20 @@ function init(){
 					}
 				}
 			}
+
 			for(var rock in CyberCloud.spaceRocks){
-				if(CyberCloud.spaceRocks.hasOwnProperty(rock)){
-					if(didCollide(CyberCloud.player, CyberCloud.spaceRocks[rock]))
+
+					if(didCollide(CyberCloud.player, CyberCloud.spaceRocks[rock])){
 						calculateCollision(CyberCloud.player, CyberCloud.spaceRocks[rock]);
-						didItHitAWall(CyberCloud.spaceRocks[rock]);
 					}
-				}
-				didItHitAWall(CyberCloud.player);
+					if(CyberCloud.spaceRocks[rock].sector.x == 0 || CyberCloud.spaceRocks[rock].sector.x == 9 || CyberCloud.spaceRocks[rock].sector.y == 0 || CyberCloud.spaceRocks[rock].sector.y == 9 ){
+						//console.log(CyberCloud.spaceRocks[rock].velocity_x);
+						didItHitAWall(CyberCloud.spaceRocks[rock]);
+						//console.log(CyberCloud.spaceRocks[rock].sprite.position);
+					}
+
+			}
+			didItHitAWall(CyberCloud.player);
 
 		for(var rock in CyberCloud.spaceRocks){
 			CyberCloud.spaceRocks[rock].update();
@@ -147,7 +154,10 @@ function sortOutWhichThingsAreInWhichSector(things){
 	}
 	for(var thing in things){
 		things[thing].sector.x = Math.abs(Math.floor(things[thing].sprite.position.x/1000));
+		//if(things[thing].sprite.position.x == NaN) console.log(thing);
 		things[thing].sector.y = Math.abs(Math.floor(things[thing].sprite.position.y/1000));
+		if(sectors[things[thing].sector.x] == undefined)
+			console.log(things[thing].sector.x);
 		sectors[things[thing].sector.x][things[thing].sector.y].push(things[thing]);
 	}
 	return sectors;
@@ -158,10 +168,12 @@ function createRocks(numberOfRocks){
 		var rock = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/rock.png'));
 		rock.anchor.x = 0.5;
 		rock.anchor.y = 0.5;
+		rock.rotation = getRandomFloat(0,6);
 		var newRock = new FloatingSpaceObject(rock, 50);
 		newRock.velocity_x = getRandomInt(0,50);
 		newRock.velocity_y = getRandomInt(0,50);
 		newRock.mass = getRandomInt(50,300);
+
 
 		do{
 			//console.log(r);
@@ -182,6 +194,9 @@ function createRocks(numberOfRocks){
 function getRandomInt(min, max) {
 	return Math.floor(Math.random() * (max - min)) + min;
 }
+function getRandomFloat(min, max) {
+	return Math.random() * (max - min) + min;
+}
 function didCollide(thing1, thing2){
 	var xDiff = Math.pow(thing2.sprite.position.x-thing1.sprite.position.x,2);
 	var yDiff = Math.pow(thing2.sprite.position.y-thing1.sprite.position.y,2);
@@ -190,7 +205,46 @@ function didCollide(thing1, thing2){
 	if(dist <= radii) return true;
 		else return false;
 }
-function calculateCollision(moving,still){
+function calculateCollision(collidingThing1,collidingThing2){
+	var nX1 = collidingThing1.sprite.position.x;
+	var nY1 = collidingThing1.sprite.position.y;
+	var nDistX = collidingThing2.sprite.position.x - nX1;
+	var nDistY = collidingThing2.sprite.position.y - nY1;
+	var nDistance = Math.sqrt ( nDistX * nDistX + nDistY * nDistY );
+	var nRadiusA = collidingThing1.radius;
+	var nRadiusB = collidingThing2.radius;
+	//var nRadius = 10;
+	var nNormalX = nDistX/nDistance;
+	var nNormalY = nDistY/nDistance;
+	var nMidpointX = ( nX1 + collidingThing2.sprite.position.x )/2;
+	var nMidpointY = ( nY1 + collidingThing2.sprite.position.y )/2;
+	/*
+	collidingThing1.sprite.position.x = nMidpointX - nNormalX * nRadiusA;
+	collidingThing1.sprite.position.y = nMidpointY - nNormalY * nRadiusA;
+
+	collidingThing2.sprite.position.x = nMidpointX + nNormalX * nRadiusB;
+	collidingThing2.sprite.position.y = nMidpointY + nNormalY * nRadiusB;
+	*/
+	var nVector = ( ( collidingThing1.velocity_x - collidingThing2.velocity_x ) * nNormalX )+ ( ( collidingThing1.velocity_y - collidingThing2.velocity_y ) * nNormalY );
+	var nVelX = nVector * nNormalX;
+	var nVelY = nVector * nNormalY;
+	collidingThing1.velocity_x -= nVelX;
+	collidingThing1.velocity_y -= nVelY;
+	collidingThing2.velocity_x += nVelX;
+	collidingThing2.velocity_y += nVelY;
+	/*
+	var newVelX1 = (collidingThing1.velocity_x * (collidingThing1.mass - collidingThing2.mass) + (2 * collidingThing2.mass * collidingThing2.velocity_x)) / (collidingThing1.mass + collidingThing2.mass);
+	var newVelY1 = (collidingThing1.velocity_y * (collidingThing1.mass - collidingThing2.mass) + (2 * collidingThing2.mass * collidingThing2.velocity_y)) / (collidingThing1.mass + collidingThing2.mass);
+	var newVelX2 = (collidingThing2.velocity_x * (collidingThing2.mass - collidingThing1.mass) + (2 * collidingThing1.mass * collidingThing1.velocity_x)) / (collidingThing1.mass + collidingThing2.mass);
+	var newVelY2 = (collidingThing2.velocity_y * (collidingThing2.mass - collidingThing1.mass) + (2 * collidingThing1.mass * collidingThing1.velocity_y)) / (collidingThing1.mass + collidingThing2.mass);
+	//console.log(collidingThing2.mass);
+	//console.log(newVelX1);
+	collidingThing1.velocity_x = newVelX1;
+	collidingThing1.velocity_y = newVelY1;
+	collidingThing2.velocity_x = newVelX2;
+	collidingThing2.velocity_y = newVelY2;
+	*/
+	/*
 	if(moving.velocity_x === 0 && moving.velocity_y === 0) {
 		if(still.velocity_x === 0 && still.velocity_y === 0) {
 			return;
@@ -205,17 +259,13 @@ function calculateCollision(moving,still){
 	var deltaX = moving.sprite.position.x - still.sprite.position.x;
 	var deltaY = moving.sprite.position.y - still.sprite.position.y;
 
-	var angleStillIsPushedOffIn = Math.atan2(deltaY,deltaX)-1.57079633;
+	var angleStillIsPushedOffIn = Math.atan2(deltaY,deltaX);
 
-	var angleMovingBouncesOffIn = angleStillIsPushedOffIn;//moving will be pushed off in a right angle to angleStillIsPushedOffIn
+	var angleMovingBouncesOffIn = angleStillIsPushedOffIn-1.57079633;//moving will be pushed off in a right angle to angleStillIsPushedOffIn
 	var movingVelocity = Math.sqrt(Math.pow(moving.velocity_x,2)+Math.pow(moving.velocity_y,2));
 	var v1 = ((moving.mass - still.mass)*movingVelocity)/(moving.mass+still.mass);//resulting velocity of moving
 	var v2 = (2*moving.mass*movingVelocity)/(moving.mass+still.mass);//Resulting velocity of still
-	/*
-	console.log("Calculate Collision!");
-	console.log("angle Ship: "+radiansToDegrees(angleMovingBouncesOffIn)+" Velocity ship is pushed off in: "+v1);
-	console.log("angle rock: "+radiansToDegrees(angleStillIsPushedOffIn)+" Velocity rock is pushed off in: "+v2);
-	*/
+
 
 	if(v1 > 10){
 		v1 = 10;
@@ -226,6 +276,7 @@ function calculateCollision(moving,still){
 
 	moving.accelerate(angleMovingBouncesOffIn, v1);
 	still.accelerate(angleStillIsPushedOffIn, v2);
+	*/
 }
 function didItHitAWall(it){
 	var wall = {
@@ -235,6 +286,8 @@ function didItHitAWall(it){
 				y:0
 			}
 		},
+		velocity_x : 0,
+		velocity_y : 0,
 		mass : 1000000,
 		accelerate: function(herp,derp){}
 	};
