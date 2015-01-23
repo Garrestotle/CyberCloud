@@ -11,7 +11,6 @@ var KEYCODE_CTRL = 17;
 
 var canWidth = 800;
 var canHeight = 450;
-//var fps = 60;
 
 var CyberCloud = {};
 
@@ -114,16 +113,19 @@ function init(){
 			}
 
 			for(var rock in CyberCloud.spaceRocks){
-
+				if(!CyberCloud.player.isColliding){
+					//console.log('Not colliding');
 					if(didCollide(CyberCloud.player, CyberCloud.spaceRocks[rock])){
 						calculateCollision(CyberCloud.player, CyberCloud.spaceRocks[rock]);
+						CyberCloud.player.isColliding = true;
+						CyberCloud.player.isCollidingWith = CyberCloud.spaceRocks[rock];
 					}
-					if(CyberCloud.spaceRocks[rock].sector.x == 0 || CyberCloud.spaceRocks[rock].sector.x == 9 || CyberCloud.spaceRocks[rock].sector.y == 0 || CyberCloud.spaceRocks[rock].sector.y == 9 ){
-						//console.log(CyberCloud.spaceRocks[rock].velocity_x);
-						didItHitAWall(CyberCloud.spaceRocks[rock]);
-						//console.log(CyberCloud.spaceRocks[rock].sprite.position);
-					}
+				}else if(!didCollide(CyberCloud.player,CyberCloud.player.isCollidingWith)){
+					CyberCloud.player.isColliding = false;
+					CyberCloud.player.isCollidingWith = null;
+				}
 
+				didItHitAWall(CyberCloud.spaceRocks[rock]);
 			}
 			didItHitAWall(CyberCloud.player);
 
@@ -156,8 +158,14 @@ function sortOutWhichThingsAreInWhichSector(things){
 		things[thing].sector.x = Math.abs(Math.floor(things[thing].sprite.position.x/1000));
 		//if(things[thing].sprite.position.x == NaN) console.log(thing);
 		things[thing].sector.y = Math.abs(Math.floor(things[thing].sprite.position.y/1000));
-		if(sectors[things[thing].sector.x] == undefined)
+		if(sectors[things[thing].sector.x] == undefined){
 			console.log(things[thing].sector.x);
+			console.log(things[thing]);
+		}
+		if(sectors[things[thing].sector.x][things[thing].sector.y] == undefined){
+			console.log(things[thing].sector.y);
+			console.log(things[thing]);
+		}
 		sectors[things[thing].sector.x][things[thing].sector.y].push(things[thing]);
 	}
 	return sectors;
@@ -218,13 +226,7 @@ function calculateCollision(collidingThing1,collidingThing2){
 	var nNormalY = nDistY/nDistance;
 	var nMidpointX = ( nX1 + collidingThing2.sprite.position.x )/2;
 	var nMidpointY = ( nY1 + collidingThing2.sprite.position.y )/2;
-	/*
-	collidingThing1.sprite.position.x = nMidpointX - nNormalX * nRadiusA;
-	collidingThing1.sprite.position.y = nMidpointY - nNormalY * nRadiusA;
 
-	collidingThing2.sprite.position.x = nMidpointX + nNormalX * nRadiusB;
-	collidingThing2.sprite.position.y = nMidpointY + nNormalY * nRadiusB;
-	*/
 	var nVector = ( ( collidingThing1.velocity_x - collidingThing2.velocity_x ) * nNormalX )+ ( ( collidingThing1.velocity_y - collidingThing2.velocity_y ) * nNormalY );
 	var nVelX = nVector * nNormalX;
 	var nVelY = nVector * nNormalY;
@@ -232,84 +234,21 @@ function calculateCollision(collidingThing1,collidingThing2){
 	collidingThing1.velocity_y -= nVelY;
 	collidingThing2.velocity_x += nVelX;
 	collidingThing2.velocity_y += nVelY;
-	/*
-	var newVelX1 = (collidingThing1.velocity_x * (collidingThing1.mass - collidingThing2.mass) + (2 * collidingThing2.mass * collidingThing2.velocity_x)) / (collidingThing1.mass + collidingThing2.mass);
-	var newVelY1 = (collidingThing1.velocity_y * (collidingThing1.mass - collidingThing2.mass) + (2 * collidingThing2.mass * collidingThing2.velocity_y)) / (collidingThing1.mass + collidingThing2.mass);
-	var newVelX2 = (collidingThing2.velocity_x * (collidingThing2.mass - collidingThing1.mass) + (2 * collidingThing1.mass * collidingThing1.velocity_x)) / (collidingThing1.mass + collidingThing2.mass);
-	var newVelY2 = (collidingThing2.velocity_y * (collidingThing2.mass - collidingThing1.mass) + (2 * collidingThing1.mass * collidingThing1.velocity_y)) / (collidingThing1.mass + collidingThing2.mass);
-	//console.log(collidingThing2.mass);
-	//console.log(newVelX1);
-	collidingThing1.velocity_x = newVelX1;
-	collidingThing1.velocity_y = newVelY1;
-	collidingThing2.velocity_x = newVelX2;
-	collidingThing2.velocity_y = newVelY2;
-	*/
-	/*
-	if(moving.velocity_x === 0 && moving.velocity_y === 0) {
-		if(still.velocity_x === 0 && still.velocity_y === 0) {
-			return;
-		}
-		var temp = still;
-		still = moving;
-		moving = temp;
-	}
-	//console.log("collision between things!");
-	//console.log(moving);
-	//console.log(still);
-	var deltaX = moving.sprite.position.x - still.sprite.position.x;
-	var deltaY = moving.sprite.position.y - still.sprite.position.y;
-
-	var angleStillIsPushedOffIn = Math.atan2(deltaY,deltaX);
-
-	var angleMovingBouncesOffIn = angleStillIsPushedOffIn-1.57079633;//moving will be pushed off in a right angle to angleStillIsPushedOffIn
-	var movingVelocity = Math.sqrt(Math.pow(moving.velocity_x,2)+Math.pow(moving.velocity_y,2));
-	var v1 = ((moving.mass - still.mass)*movingVelocity)/(moving.mass+still.mass);//resulting velocity of moving
-	var v2 = (2*moving.mass*movingVelocity)/(moving.mass+still.mass);//Resulting velocity of still
-
-
-	if(v1 > 10){
-		v1 = 10;
-	}
-	if(v2 > 10){
-		v2=10;
-	}
-
-	moving.accelerate(angleMovingBouncesOffIn, v1);
-	still.accelerate(angleStillIsPushedOffIn, v2);
-	*/
 }
 function didItHitAWall(it){
-	var wall = {
-		sprite:{
-			position:{
-				x:0,
-				y:0
-			}
-		},
-		velocity_x : 0,
-		velocity_y : 0,
-		mass : 1000000,
-		accelerate: function(herp,derp){}
-	};
 	if(it.sprite.position.x < it.radius){
-		//console.log('Wall Crash!');
-		wall.sprite.position.x = it.sprite.position.x-it.radius;
-		wall.sprite.position.y = it.sprite.position.y;
-		calculateCollision(it,wall);
+		it.velocity_x = -(it.velocity_x/2);
+		it.updatePosition((it.radius-it.sprite.position.x+1),0);
 	}else if(it.sprite.position.x > CyberCloud.gameLevel.levelWidth - it.radius){
-		wall.sprite.position.x = it.sprite.position.x+it.radius;
-		wall.sprite.position.y = it.sprite.position.y;
-		calculateCollision(it,wall);
+		it.velocity_x = -(it.velocity_x/2);
+		it.updatePosition(-(it.sprite.position.x-(CyberCloud.gameLevel.levelWidth - it.radius)+1),0);
 	}
 	if(it.sprite.position.y < it.radius){
-		//console.log('Wall Crash!');
-		wall.sprite.position.y = it.sprite.position.y-it.radius;
-		wall.sprite.position.x = it.sprite.position.x;
-		calculateCollision(it,wall);
+		it.velocity_y = -(it.velocity_y/2);
+		it.updatePosition(0,(it.radius-it.sprite.position.y+1));
 	}else if(it.sprite.position.y > CyberCloud.gameLevel.levelHeight - it.radius){
-		wall.sprite.position.y = it.sprite.position.y+it.radius;
-		wall.sprite.position.x = it.sprite.position.x;
-		calculateCollision(it,wall);
+		it.velocity_y = -(it.velocity_y/2);
+		it.updatePosition(0,-(it.sprite.position.y-(CyberCloud.gameLevel.levelHeight - it.radius)+1));
 	}
 }
 function FloatingSpaceObject(sprite, radius){
@@ -322,9 +261,9 @@ function FloatingSpaceObject(sprite, radius){
 	this.isColliding = false;
 	this.isCollidingWith = null;
 
-	this.updatePosition = function(){
-		this.sprite.position.x += this.velocity_x * CyberCloud.delta;
-		this.sprite.position.y += this.velocity_y * CyberCloud.delta;
+	this.updatePosition = function(xAmount, yAmount){
+		this.sprite.position.x += xAmount;
+		this.sprite.position.y += yAmount;
 	};
 	this.deg_conv = function(angle){
 		if (angle < 0){
@@ -349,7 +288,7 @@ function FloatingSpaceObject(sprite, radius){
 	};
 
 	this.update = function(){
-		this.updatePosition();
+		this.updatePosition(this.velocity_x * CyberCloud.delta,this.velocity_y * CyberCloud.delta);
 	};
 
 }
@@ -366,17 +305,15 @@ function PlayerShip(sprite){
 	this.radius = 22;
 	this.mass = 10;
 
-	this.update_position = function(){
-		var velocityX = this.velocity_x * CyberCloud.delta;
-		var velocityY = this.velocity_y * CyberCloud.delta;
-		this.sprite.position.x += velocityX;
-		this.sprite.position.y += velocityY;
-		CyberCloud.background.tilePosition.x -= velocityX/10;
-		CyberCloud.background.tilePosition.y -= velocityY/10;
-		CyberCloud.lessBackBackground.tilePosition.x -= velocityX/5;
-		CyberCloud.lessBackBackground.tilePosition.y -= velocityY/5;
-		CyberCloud.gameLevel.position.x -= velocityX;
-		CyberCloud.gameLevel.position.y -= velocityY;
+	this.updatePosition = function(xAmount, yAmount){
+		this.sprite.position.x += xAmount;
+		this.sprite.position.y += yAmount;
+		CyberCloud.background.tilePosition.x -= xAmount/10;
+		CyberCloud.background.tilePosition.y -= yAmount/10;
+		CyberCloud.lessBackBackground.tilePosition.x -= xAmount/4;
+		CyberCloud.lessBackBackground.tilePosition.y -= yAmount/4;
+		CyberCloud.gameLevel.position.x -= xAmount;
+		CyberCloud.gameLevel.position.y -= yAmount;
 	};
 this.apply_breaks = function(){
 	var breakSpeed = this.acceleration_rate * CyberCloud.delta * 2;
@@ -429,7 +366,9 @@ this.update = function(){
 		this.sprite.gotoAndStop(1);
 	}
 	else this.sprite.gotoAndStop(0);
-	this.update_position();
+	var velocityX = this.velocity_x * CyberCloud.delta;
+	var velocityY = this.velocity_y * CyberCloud.delta;
+	this.updatePosition(velocityX,velocityY);
 	//this.screen_wrap();
 
 };
@@ -453,7 +392,7 @@ function handleKeyDown(e) {
 			CyberCloud.player.breaking = true;
 		break;
 		case KEYCODE_ESC:
-			//pauseMenu();
+			console.log(CyberCloud.player.velocity_y);
 		break;
 		case KEYCODE_CTRL:
 			CyberCloud.player.nitro();
