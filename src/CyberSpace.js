@@ -189,7 +189,6 @@ function createRocks(numberOfRocks){
 			newRock.radius = newRock.radius*1.5;
 		}
 		do{
-			//console.log(r);
 			var overlap = false;
 			newRock.sprite.position.x = getRandomInt(CyberCloud.gameLevel.levelWidth-50,50);
 			newRock.sprite.position.y = getRandomInt(CyberCloud.gameLevel.levelHeight-50,50);
@@ -224,13 +223,8 @@ function calculateCollision(collidingThing1,collidingThing2){
 	var nDistX = collidingThing2.sprite.position.x - nX1;
 	var nDistY = collidingThing2.sprite.position.y - nY1;
 	var nDistance = Math.sqrt ( nDistX * nDistX + nDistY * nDistY );
-	var nRadiusA = collidingThing1.radius;
-	var nRadiusB = collidingThing2.radius;
-	//var nRadius = 10;
 	var nNormalX = nDistX/nDistance;
 	var nNormalY = nDistY/nDistance;
-	var nMidpointX = ( nX1 + collidingThing2.sprite.position.x )/2;
-	var nMidpointY = ( nY1 + collidingThing2.sprite.position.y )/2;
 
 	var nVector = ( ( collidingThing1.velocity_x - collidingThing2.velocity_x ) * nNormalX )+ ( ( collidingThing1.velocity_y - collidingThing2.velocity_y ) * nNormalY );
 	var nVelX = nVector * nNormalX;
@@ -301,6 +295,76 @@ function FloatingSpaceObject(sprite, radius){
 	};
 
 }
+function Ship(sprite){
+	this.sprite = sprite;
+	this.nitroCoolDown = 0;
+	this.acceleration_rate = 150;
+	this.rotating_l = false;
+	this.rotating_r = false;
+	this.accelerating = false;
+	this.breaking = false;
+	this.radius = 22;
+	this.mass = 10;
+
+	this.apply_breaks = function(){
+		var breakSpeed = this.acceleration_rate * CyberCloud.delta * 2;
+		if (this.velocity_x > -(breakSpeed) && this.velocity_x < breakSpeed){
+			this.velocity_x = 0;
+		}
+		if (this.velocity_y > -(breakSpeed) && this.velocity_y < breakSpeed){
+			this.velocity_y = 0;
+		}
+		if ( 0 > this.velocity_x){
+			this.velocity_x += breakSpeed;
+		}
+		else if ( 0 < this.velocity_x){
+			this.velocity_x -= breakSpeed;
+		}
+		if ( 0 > this.velocity_y){
+			this.velocity_y += breakSpeed;
+		}
+		else if ( 0 < this.velocity_y){
+			this.velocity_y -= breakSpeed;
+		}
+	};
+	this.spin_ship = function(){
+		if (this.rotating_l){
+			this.sprite.rotation -= 4 * CyberCloud.delta;
+		}
+		if (this.rotating_r){
+			this.sprite.rotation += 4 * CyberCloud.delta;
+		}
+
+	};
+	this.nitro = function(){
+		if(this.nitroCoolDown <= 0){
+			this.nitroCoolDown = 5;
+			this.accelerate(this.sprite.rotation,this.acceleration_rate*5);
+		}
+	};
+
+	this.update = function(){
+		if(this.nitroCoolDown > 0){
+			this.nitroCoolDown -= CyberCloud.delta;
+		}
+		if(this.rotating_l || this.rotating_r){
+			this.spin_ship();
+		}
+		if(this.breaking){
+			this.apply_breaks();
+		}
+		if(this.accelerating){
+			this.accelerate(this.sprite.rotation, this.acceleration_rate * CyberCloud.delta);
+			this.sprite.gotoAndStop(1);
+		}else this.sprite.gotoAndStop(0);
+		var velocityX = this.velocity_x * CyberCloud.delta;
+		var velocityY = this.velocity_y * CyberCloud.delta;
+		this.updatePosition(velocityX,velocityY);
+
+	};
+
+}
+Ship.prototype = new FloatingSpaceObject();
 
 function PlayerShip(sprite){
 
@@ -324,65 +388,9 @@ function PlayerShip(sprite){
 		CyberCloud.gameLevel.position.x -= xAmount;
 		CyberCloud.gameLevel.position.y -= yAmount;
 	};
-this.apply_breaks = function(){
-	var breakSpeed = this.acceleration_rate * CyberCloud.delta * 2;
-	if (this.velocity_x > -(breakSpeed) && this.velocity_x < breakSpeed){
-		this.velocity_x = 0;
-	}
-	if (this.velocity_y > -(breakSpeed) && this.velocity_y < breakSpeed){
-		this.velocity_y = 0;
-	}
-	if ( 0 > this.velocity_x){
-		this.velocity_x += breakSpeed;
-	}
-	else if ( 0 < this.velocity_x){
-		this.velocity_x -= breakSpeed;
-	}
-	if ( 0 > this.velocity_y){
-		this.velocity_y += breakSpeed;
-	}
-	else if ( 0 < this.velocity_y){
-		this.velocity_y -= breakSpeed;
-	}
-};
-this.spin_ship = function(){
-	if (this.rotating_l){
-		this.sprite.rotation -= 4 * CyberCloud.delta;
-	}
-	if (this.rotating_r){
-		this.sprite.rotation += 4 * CyberCloud.delta;
-	}
-
-};
-this.nitro = function(){
-	if(this.nitroCoolDown <= 0){
-		this.nitroCoolDown = 5;
-		this.accelerate(this.sprite.rotation,this.acceleration_rate*5);
-	}
-};
-this.update = function(){
-	if(this.nitroCoolDown > 0){
-		this.nitroCoolDown -= CyberCloud.delta;
-	}
-	if(this.rotating_l || this.rotating_r){
-		this.spin_ship();
-	}
-	if(this.breaking){
-		this.apply_breaks();
-	}
-	if(this.accelerating){
-		this.accelerate(this.sprite.rotation, this.acceleration_rate * CyberCloud.delta);
-		this.sprite.gotoAndStop(1);
-	}
-	else this.sprite.gotoAndStop(0);
-	var velocityX = this.velocity_x * CyberCloud.delta;
-	var velocityY = this.velocity_y * CyberCloud.delta;
-	this.updatePosition(velocityX,velocityY);
-	//this.screen_wrap();
-
-};
 }
-PlayerShip.prototype = new FloatingSpaceObject();
+PlayerShip.prototype = new Ship();
+
 function radiansToDegrees(radians){
 	return radians*(180/Math.PI);
 }
