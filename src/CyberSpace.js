@@ -43,7 +43,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(950);
+		createRocks(100);
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -178,8 +178,8 @@ function createRocks(numberOfRocks){
 		rock.anchor.y = 0.5;
 		rock.rotation = getRandomFloat(0,6);
 		var newRock = new FloatingSpaceObject(rock, 50);
-		newRock.velocity_x = getRandomInt(0,50);
-		newRock.velocity_y = getRandomInt(0,50);
+		newRock.velocity_x = getRandomInt(0,100);
+		newRock.velocity_y = getRandomInt(0,100);
 		newRock.mass = getRandomInt(50,500);
 		if(newRock.mass < 125){
 			newRock.sprite.scale = {x:0.5,y:0.5};
