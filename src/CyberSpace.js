@@ -180,9 +180,14 @@ function createRocks(numberOfRocks){
 		var newRock = new FloatingSpaceObject(rock, 50);
 		newRock.velocity_x = getRandomInt(0,50);
 		newRock.velocity_y = getRandomInt(0,50);
-		newRock.mass = getRandomInt(50,300);
-
-
+		newRock.mass = getRandomInt(50,500);
+		if(newRock.mass < 125){
+			newRock.sprite.scale = {x:0.5,y:0.5};
+			newRock.radius = newRock.radius/2;
+		}else if(newRock.mass > 400){
+			newRock.sprite.scale = {x:1.5,y:1.5};
+			newRock.radius = newRock.radius*1.5;
+		}
 		do{
 			//console.log(r);
 			var overlap = false;
@@ -238,6 +243,10 @@ function calculateCollision(collidingThing1,collidingThing2){
 function didItHitAWall(it){
 	if(it.sprite.position.x < it.radius){
 		it.velocity_x = -(it.velocity_x/2);
+		if((it.radius-it.sprite.position.x+1) > 1000){
+			console.log(it.radius);
+			console.log(it.sprite.position.x);
+		}
 		it.updatePosition((it.radius-it.sprite.position.x+1),0);
 	}else if(it.sprite.position.x > CyberCloud.gameLevel.levelWidth - it.radius){
 		it.velocity_x = -(it.velocity_x/2);
