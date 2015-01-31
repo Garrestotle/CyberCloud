@@ -50,9 +50,6 @@ function init(){
 		fireWall.drawRect(0, 0, CyberCloud.gameLevel.levelWidth, CyberCloud.gameLevel.levelHeight);
 
 		var ship = new PIXI.MovieClip(playerShipTextures);
-
-
-
 		ship.anchor.x = 0.5;
 		ship.anchor.y = 0.5;
 		ship.position.x = canWidth/2;
@@ -158,11 +155,11 @@ function sortOutWhichThingsAreInWhichSector(things){
 		things[thing].sector.x = Math.abs(Math.floor(things[thing].sprite.position.x/1000));
 		//if(things[thing].sprite.position.x == NaN) console.log(thing);
 		things[thing].sector.y = Math.abs(Math.floor(things[thing].sprite.position.y/1000));
-		if(sectors[things[thing].sector.x] == undefined){
+		if(sectors[things[thing].sector.x] === undefined){
 			console.log(things[thing].sector.x);
 			console.log(things[thing]);
 		}
-		if(sectors[things[thing].sector.x][things[thing].sector.y] == undefined){
+		if(sectors[things[thing].sector.x][things[thing].sector.y] === undefined){
 			console.log(things[thing].sector.y);
 			console.log(things[thing]);
 		}
