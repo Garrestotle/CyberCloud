@@ -98,9 +98,6 @@ function init(){
 	function animate(){
 		calculateDelta();
 		var thingsThatCouldPossiblyCollide = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc);
-		for (var thing in thingsThatCouldPossiblyCollide){
-			didItHitAWall(thingsThatCouldPossiblyCollide[thing]);
-		};
 		var sectors = sortOutWhichThingsAreInWhichSector(thingsThatCouldPossiblyCollide);
 
 		for(var x = 0; x < sectors.length; x++){
@@ -127,6 +124,7 @@ function init(){
 		}
 
 		for(var thing in thingsThatCouldPossiblyCollide){
+			didItHitAWall(thingsThatCouldPossiblyCollide[thing]);
 			thingsThatCouldPossiblyCollide[thing].update();
 		}
 		renderer.render(stage);
@@ -183,8 +181,9 @@ function createRocks(numberOfRocks){
 			newRock.sprite.scale = {x:1.5,y:1.5};
 			newRock.radius = newRock.radius*1.5;
 		}
+		var overlap;
 		do{
-			var overlap = false;
+			overlap = false;
 			newRock.sprite.position.x = getRandomInt(CyberCloud.gameLevel.levelWidth-50,50);
 			newRock.sprite.position.y = getRandomInt(CyberCloud.gameLevel.levelHeight-50,50);
 			for(var oldRock in CyberCloud.spaceRocks){
@@ -192,7 +191,7 @@ function createRocks(numberOfRocks){
 					overlap = true;
 				}
 			}
-		}while(overlap)
+		}while(overlap);
 
 		CyberCloud.spaceRocks.push(newRock);
 
