@@ -2,8 +2,8 @@
 
 "OtherShip.png":
 {
-	"frame": {"x":2,"y":48,"w":44,"h":47},
-	"rotated": true,
+	"frame": {"x":48,"y":2,"w":44,"h":47},
+	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":3,"y":0,"w":44,"h":47},
 	"sourceSize": {"w":50,"h":50},
@@ -12,7 +12,7 @@
 "OtherShipGo.png":
 {
 	"frame": {"x":2,"y":2,"w":44,"h":48},
-	"rotated": true,
+	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":3,"y":0,"w":44,"h":48},
 	"sourceSize": {"w":50,"h":50},
@@ -23,7 +23,7 @@
 	"version": "1.0",
 	"image": "otherShipSS.png",
 	"format": "RGBA8888",
-	"size": {"w":52,"h":94},
+	"size": {"w":94,"h":52},
 	"scale": "1",
 	"smartupdate": "$TexturePacker:SmartUpdate:97ec030226d9385e6bd0005995bd94ea:76b11eceff01ffb493c33a76e111368d:a5ac5e2c3892a15dd15f30c6bc367894$"
 }

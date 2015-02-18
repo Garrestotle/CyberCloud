@@ -49,7 +49,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(700);
+		createRocks(7);
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -324,9 +324,13 @@ function Ship(sprite){
 	this.spin_ship = function(){
 		if (this.rotating_l){
 			this.sprite.rotation -= 4 * CyberCloud.delta;
+			if(this.sprite.rotation < -(Math.PI))
+				this.sprite.rotation += 2*Math.PI;
 		}
 		if (this.rotating_r){
 			this.sprite.rotation += 4 * CyberCloud.delta;
+			if(this.sprite.rotation > Math.PI)
+				this.sprite.rotation -= 2*Math.PI;
 		}
 
 	};
@@ -395,6 +399,53 @@ function AIShip(sprite){
 	this.breaking = false;
 	this.radius = 22;
 	this.mass = 10;
+
+	this.AI = function(){
+		var target = CyberCloud.player;
+
+		var xDiff = target.sprite.position.x - this.sprite.position.x;
+		var yDiff = target.sprite.position.y - this.sprite.position.y;
+
+		this.turnTowardsTarget(xDiff, yDiff);
+
+		var distanceToTarget = Math.sqrt(Math.pow(yDiff,2) + Math.pow(xDiff,2));
+	}
+	this.turnTowardsTarget = function(xDiff, yDiff){
+		var radiansToTarget = Math.atan2(xDiff,-yDiff);
+
+		//TODO: Think of a better way to make the ship not turn all the way around the other direction when player passes under the ship when I'm not sick
+		if(this.sprite.rotation > radiansToTarget+.15 || this.sprite.rotation < radiansToTarget-Math.PI-.15){
+			this.rotating_l = true;
+			this.rotating_r = false;
+		}else if(this.sprite.rotation < radiansToTarget-.15 || this.sprite.rotation > radiansToTarget-Math.PI+.15){
+			this.rotating_l = false;
+			this.rotating_r = true;
+		}else{
+			this.rotating_l = false;
+			this.rotating_r = false;
+		}
+	}
+	this.update = function(){
+
+		this.AI();
+
+		if(this.nitroCoolDown > 0){
+			this.nitroCoolDown -= CyberCloud.delta;
+		}
+		if(this.rotating_l || this.rotating_r){
+			this.spin_ship();
+		}
+		if(this.breaking){
+			this.apply_breaks();
+		}
+		if(this.accelerating){
+			this.accelerate(this.sprite.rotation, this.acceleration_rate * CyberCloud.delta);
+			this.sprite.gotoAndStop(1);
+		}else this.sprite.gotoAndStop(0);
+		var velocityX = this.velocity_x * CyberCloud.delta;
+		var velocityY = this.velocity_y * CyberCloud.delta;
+		this.updatePosition(velocityX,velocityY);
+	}
 }
 AIShip.prototype = new Ship();
 function radiansToDegrees(radians){
