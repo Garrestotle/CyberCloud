@@ -27,7 +27,6 @@ function init(){
 	loader.load();
 
 	function onAssetsLoaded(){
-		console.log('test');
 		var playerShipTextures = [];
 		playerShipTextures.push(PIXI.Texture.fromFrame("PlayerShip.png"));
 		playerShipTextures.push(PIXI.Texture.fromFrame("PlayerShipGo.png"));
@@ -49,7 +48,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(7);
+		createRocks(200);//Tested up to 1000
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -164,7 +163,6 @@ function sortOutWhichThingsAreInWhichSector(things){
 	return sectors;
 }
 function createRocks(numberOfRocks){
-	console.log('creating rocks');
 	for(var r = 0; r < numberOfRocks; r++){
 		var rock = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/rock.png'));
 		rock.anchor.x = 0.5;
@@ -409,11 +407,22 @@ function AIShip(sprite){
 		this.turnTowardsTarget(xDiff, yDiff);
 
 		var distanceToTarget = Math.sqrt(Math.pow(yDiff,2) + Math.pow(xDiff,2));
+
+		if(distanceToTarget > 200){
+			this.accelerating = true;
+			this.breaking = false;
+			if(distanceToTarget > 2000 && this.nitroCoolDown == 0){
+				this.nitro();
+				console.log('NITROOOOOOOOOOOO!!!!');
+			}
+		}else{
+			this.accelerating = false;
+			this.breaking = true;
+		}
 	}
 	this.turnTowardsTarget = function(xDiff, yDiff){
 		var radiansToTarget = Math.atan2(xDiff,-yDiff);
 
-		//TODO: Think of a better way to make the ship not turn all the way around the other direction when player passes under the ship when I'm not sick
 		if(this.sprite.rotation > radiansToTarget+.15){
 			if(Math.abs(radiansToTarget-this.sprite.rotation)>Math.PI){
 				this.rotating_l = false;
@@ -429,7 +438,7 @@ function AIShip(sprite){
 			}else{
 				this.rotating_l = false;
 				this.rotating_r = true;
-			}		
+			}
 		}else{
 			this.rotating_l = false;
 			this.rotating_r = false;
