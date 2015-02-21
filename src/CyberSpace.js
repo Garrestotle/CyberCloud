@@ -414,12 +414,22 @@ function AIShip(sprite){
 		var radiansToTarget = Math.atan2(xDiff,-yDiff);
 
 		//TODO: Think of a better way to make the ship not turn all the way around the other direction when player passes under the ship when I'm not sick
-		if(this.sprite.rotation > radiansToTarget+.15 || this.sprite.rotation < radiansToTarget-Math.PI-.15){
-			this.rotating_l = true;
-			this.rotating_r = false;
-		}else if(this.sprite.rotation < radiansToTarget-.15 || this.sprite.rotation > radiansToTarget-Math.PI+.15){
-			this.rotating_l = false;
-			this.rotating_r = true;
+		if(this.sprite.rotation > radiansToTarget+.15){
+			if(Math.abs(radiansToTarget-this.sprite.rotation)>Math.PI){
+				this.rotating_l = false;
+				this.rotating_r = true;
+			}else{
+				this.rotating_l = true;
+				this.rotating_r = false;
+			}
+		}else if(this.sprite.rotation < radiansToTarget-.15){
+			if(Math.abs(radiansToTarget-this.sprite.rotation)>Math.PI){
+				this.rotating_l = true;
+				this.rotating_r = false;
+			}else{
+				this.rotating_l = false;
+				this.rotating_r = true;
+			}		
 		}else{
 			this.rotating_l = false;
 			this.rotating_r = false;
