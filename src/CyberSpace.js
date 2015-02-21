@@ -8,11 +8,13 @@ var KEYCODE_DOWN = 40;
 //var KEYCODE_s = 83;
 var KEYCODE_ESC = 27;
 var KEYCODE_CTRL = 17;
+var KEYCODE_SPACE = 32;
 
 var canWidth = 800;
 var canHeight = 450;
 
 var CyberCloud = {};
+CyberCloud.projectiles = [];
 
 function init(){
 
@@ -20,7 +22,7 @@ function init(){
 	var renderer = PIXI.autoDetectRenderer(canWidth,canHeight);
 	document.body.appendChild(renderer.view);
 
-	var assetsToLoad = ["graphics/playerShipSS.json","graphics/otherShipSS.json", "graphics/StarField.png", "graphics/starFieldCloseAlph.png","graphics/Planet.png", "graphics/rock.png"];
+	var assetsToLoad = ["graphics/playerShipSS.json","graphics/otherShipSS.json", "graphics/StarField.png", "graphics/starFieldCloseAlph.png","graphics/Planet.png", "graphics/rock.png", "graphics/laserBullet.png"];
 	var loader = new PIXI.AssetLoader(assetsToLoad);
 	loader.onComplete = onAssetsLoaded;
 
@@ -125,6 +127,13 @@ function init(){
 		for(var thing in thingsThatCouldPossiblyCollide){
 			didItHitAWall(thingsThatCouldPossiblyCollide[thing]);
 			thingsThatCouldPossiblyCollide[thing].update();
+		}
+		for(var projectile in CyberCloud.projectiles){
+			CyberCloud.projectiles[projectile].update();
+			if(CyberCloud.projectiles[projectile].active <= 0){
+				CyberCloud.gameLevel.removeChild(CyberCloud.projectiles[projectile].sprite);
+				CyberCloud.projectiles.splice(projectile,1);
+			}
 		}
 		renderer.render(stage);
 		requestAnimationFrame(animate);
@@ -287,6 +296,24 @@ function FloatingSpaceObject(sprite, radius){
 	};
 
 }
+function Projectile(shooter){
+	this.sprite = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/laserBullet.png'));
+		this.sprite.anchor.x = 0.5;
+		this.sprite.anchor.y = 0.5;
+	this.type = "projectile";
+	this.active = 3;
+	this.sprite.position.x = shooter.xPosition + Math.cos(shooter.rotation-Math.PI/2) * shooter.radius;
+	this.sprite.position.y = shooter.yPosition + Math.sin(shooter.rotation-Math.PI/2) * shooter.radius;
+	CyberCloud.gameLevel.addChild(this.sprite);
+	this.accelerate(shooter.rotation, 300);
+
+	this.update = function(){
+		this.active -= CyberCloud.delta;
+		this.updatePosition(this.velocity_x * CyberCloud.delta,this.velocity_y * CyberCloud.delta);
+	};
+}
+Projectile.prototype = new FloatingSpaceObject();
+
 function Ship(sprite){
 	this.sprite = sprite;
 	this.nitroCoolDown = 0;
@@ -338,7 +365,14 @@ function Ship(sprite){
 			this.accelerate(this.sprite.rotation,this.acceleration_rate*5);
 		}
 	};
-
+	this.fireLaser = function(){
+		CyberCloud.projectiles.push(new Projectile({
+			radius: this.radius,
+			xPosition: this.sprite.position.x,
+			yPosition: this.sprite.position.y,
+			rotation: this.sprite.rotation
+		}));
+	};
 	this.update = function(){
 		if(this.nitroCoolDown > 0){
 			this.nitroCoolDown -= CyberCloud.delta;
@@ -489,6 +523,9 @@ function handleKeyDown(e) {
 		break;
 		case KEYCODE_CTRL:
 			CyberCloud.player.nitro();
+		break;
+		case KEYCODE_SPACE:
+			CyberCloud.player.fireLaser();
 		break;
 	}
 }
