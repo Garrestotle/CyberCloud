@@ -15,19 +15,24 @@ var canHeight = 450;
 var CyberCloud = {};
 
 function init(){
+
 	var stage = new PIXI.Stage(0x000);
 	var renderer = PIXI.autoDetectRenderer(canWidth,canHeight);
 	document.body.appendChild(renderer.view);
 
-	var assetsToLoad = ["graphics/playerShipSS.json", "graphics/StarField.png", "graphics/starFieldCloseAlph.png","graphics/Planet.png", "graphics/rock.png"];
+	var assetsToLoad = ["graphics/playerShipSS.json","graphics/otherShipSS.json", "graphics/StarField.png", "graphics/starFieldCloseAlph.png","graphics/Planet.png", "graphics/rock.png"];
 	var loader = new PIXI.AssetLoader(assetsToLoad);
 	loader.onComplete = onAssetsLoaded;
+
 	loader.load();
 
 	function onAssetsLoaded(){
 		var playerShipTextures = [];
 		playerShipTextures.push(PIXI.Texture.fromFrame("PlayerShip.png"));
 		playerShipTextures.push(PIXI.Texture.fromFrame("PlayerShipGo.png"));
+		var otherShipTextures = [];
+		otherShipTextures.push(PIXI.Texture.fromFrame("OtherShip.png"));
+		otherShipTextures.push(PIXI.Texture.fromFrame("OtherShipGo.png"));
 
 		CyberCloud.background = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/StarField.png'),800,500);
 		CyberCloud.lessBackBackground = new PIXI.TilingSprite(PIXI.Texture.fromImage('graphics/starFieldCloseAlph.png'),800,500);
@@ -43,24 +48,28 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(100);
+		createRocks(200);//Tested up to 1000
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
 		fireWall.drawRect(0, 0, CyberCloud.gameLevel.levelWidth, CyberCloud.gameLevel.levelHeight);
 
 		var ship = new PIXI.MovieClip(playerShipTextures);
-
-
-
 		ship.anchor.x = 0.5;
 		ship.anchor.y = 0.5;
 		ship.position.x = canWidth/2;
 		ship.position.y = canHeight/2;
 		ship.gotoAndStop(0);
+		var otherShip = new PIXI.MovieClip(otherShipTextures);
+		otherShip.anchor.x = 0.5;
+		otherShip.anchor.y = 0.5;
+		otherShip.position.x = canWidth/2 +100;
+		otherShip.position.y = canHeight/2+100;
+		otherShip.gotoAndStop(0);
 
 		CyberCloud.gameLevel.addChild(planet);
 		CyberCloud.gameLevel.addChild(ship);
+		CyberCloud.gameLevel.addChild(otherShip);
 
 		for (var rock in CyberCloud.spaceRocks){
 			if(CyberCloud.spaceRocks.hasOwnProperty(rock)){
@@ -74,6 +83,7 @@ function init(){
 		stage.addChild(CyberCloud.gameLevel);
 
 		CyberCloud.player = new PlayerShip(ship);
+		CyberCloud.npc = new AIShip(otherShip);
 
 		requestAnimationFrame(animate);
 		window.addEventListener('keydown',function(e){
@@ -85,58 +95,40 @@ function init(){
 
 	}
 	function animate(){
-			calculateDelta();
-			var sectors = sortOutWhichThingsAreInWhichSector(CyberCloud.spaceRocks);
+		calculateDelta();
+		var thingsThatCouldPossiblyCollide = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc);
+		var sectors = sortOutWhichThingsAreInWhichSector(thingsThatCouldPossiblyCollide);
 
-			for(var x = 0; x < sectors.length; x++){
-				for(var y = 0; y < sectors[x].length; y++){
-					for(var thing1 in sectors[x][y]){
-						var firstThing = true;
-						if(!sectors[x][y][thing1].isColliding){
-							for(var thing2 in sectors[x][y]){
-								if(sectors[x][y][thing1] !==  sectors[x][y][thing2]){
-									if(didCollide(sectors[x][y][thing1],sectors[x][y][thing2])){
-										sectors[x][y][thing1].isColliding = true;
-										sectors[x][y][thing1].isCollidingWith = sectors[x][y][thing2];
-										sectors[x][y][thing2].isColliding = true;
-										sectors[x][y][thing2].isCollidingWith = sectors[x][y][thing1];
-										calculateCollision(sectors[x][y][thing1],sectors[x][y][thing2]);
-									}
+		for(var x = 0; x < sectors.length; x++){
+			for(var y = 0; y < sectors[x].length; y++){
+				for(var thing1 in sectors[x][y]){
+					if(!sectors[x][y][thing1].isColliding){
+						for(var thing2 in sectors[x][y]){
+							if(sectors[x][y][thing1] !==  sectors[x][y][thing2]){
+								if(didCollide(sectors[x][y][thing1],sectors[x][y][thing2])){
+									sectors[x][y][thing1].isColliding = true;
+									sectors[x][y][thing1].isCollidingWith = sectors[x][y][thing2];
+									sectors[x][y][thing2].isColliding = true;
+									sectors[x][y][thing2].isCollidingWith = sectors[x][y][thing1];
+									calculateCollision(sectors[x][y][thing1],sectors[x][y][thing2]);
 								}
 							}
-						}else if(!didCollide(sectors[x][y][thing1],sectors[x][y][thing1].isCollidingWith)){
-							sectors[x][y][thing1].isColliding = false;
-							sectors[x][y][thing1].isCollidingWith.isColliding = false;
 						}
+					}else if(!didCollide(sectors[x][y][thing1],sectors[x][y][thing1].isCollidingWith)){
+						sectors[x][y][thing1].isColliding = false;
+						sectors[x][y][thing1].isCollidingWith.isColliding = false;
 					}
 				}
 			}
-
-			for(var rock in CyberCloud.spaceRocks){
-				if(!CyberCloud.player.isColliding){
-					//console.log('Not colliding');
-					if(didCollide(CyberCloud.player, CyberCloud.spaceRocks[rock])){
-						calculateCollision(CyberCloud.player, CyberCloud.spaceRocks[rock]);
-						CyberCloud.player.isColliding = true;
-						CyberCloud.player.isCollidingWith = CyberCloud.spaceRocks[rock];
-					}
-				}else if(!didCollide(CyberCloud.player,CyberCloud.player.isCollidingWith)){
-					CyberCloud.player.isColliding = false;
-					CyberCloud.player.isCollidingWith = null;
-				}
-
-				didItHitAWall(CyberCloud.spaceRocks[rock]);
-			}
-			didItHitAWall(CyberCloud.player);
-
-		for(var rock in CyberCloud.spaceRocks){
-			CyberCloud.spaceRocks[rock].update();
 		}
-		CyberCloud.player.update();
+
+		for(var thing in thingsThatCouldPossiblyCollide){
+			didItHitAWall(thingsThatCouldPossiblyCollide[thing]);
+			thingsThatCouldPossiblyCollide[thing].update();
+		}
 		renderer.render(stage);
 		requestAnimationFrame(animate);
 	}
-
 }
 CyberCloud.thisFrame = Date.now();
 CyberCloud.lastFrame = Date.now();
@@ -158,11 +150,11 @@ function sortOutWhichThingsAreInWhichSector(things){
 		things[thing].sector.x = Math.abs(Math.floor(things[thing].sprite.position.x/1000));
 		//if(things[thing].sprite.position.x == NaN) console.log(thing);
 		things[thing].sector.y = Math.abs(Math.floor(things[thing].sprite.position.y/1000));
-		if(sectors[things[thing].sector.x] == undefined){
+		if(sectors[things[thing].sector.x] === undefined){
 			console.log(things[thing].sector.x);
 			console.log(things[thing]);
 		}
-		if(sectors[things[thing].sector.x][things[thing].sector.y] == undefined){
+		if(sectors[things[thing].sector.x][things[thing].sector.y] === undefined){
 			console.log(things[thing].sector.y);
 			console.log(things[thing]);
 		}
@@ -171,7 +163,6 @@ function sortOutWhichThingsAreInWhichSector(things){
 	return sectors;
 }
 function createRocks(numberOfRocks){
-	console.log('creating rocks');
 	for(var r = 0; r < numberOfRocks; r++){
 		var rock = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/rock.png'));
 		rock.anchor.x = 0.5;
@@ -188,8 +179,9 @@ function createRocks(numberOfRocks){
 			newRock.sprite.scale = {x:1.5,y:1.5};
 			newRock.radius = newRock.radius*1.5;
 		}
+		var overlap;
 		do{
-			var overlap = false;
+			overlap = false;
 			newRock.sprite.position.x = getRandomInt(CyberCloud.gameLevel.levelWidth-50,50);
 			newRock.sprite.position.y = getRandomInt(CyberCloud.gameLevel.levelHeight-50,50);
 			for(var oldRock in CyberCloud.spaceRocks){
@@ -197,7 +189,7 @@ function createRocks(numberOfRocks){
 					overlap = true;
 				}
 			}
-		}while(overlap)
+		}while(overlap);
 
 		CyberCloud.spaceRocks.push(newRock);
 
@@ -330,9 +322,13 @@ function Ship(sprite){
 	this.spin_ship = function(){
 		if (this.rotating_l){
 			this.sprite.rotation -= 4 * CyberCloud.delta;
+			if(this.sprite.rotation < -(Math.PI))
+				this.sprite.rotation += 2*Math.PI;
 		}
 		if (this.rotating_r){
 			this.sprite.rotation += 4 * CyberCloud.delta;
+			if(this.sprite.rotation > Math.PI)
+				this.sprite.rotation -= 2*Math.PI;
 		}
 
 	};
@@ -391,6 +387,86 @@ function PlayerShip(sprite){
 }
 PlayerShip.prototype = new Ship();
 
+function AIShip(sprite){
+	this.sprite = sprite;
+	this.nitroCoolDown = 0;
+	this.acceleration_rate = 150;
+	this.rotating_l = false;
+	this.rotating_r = false;
+	this.accelerating = false;
+	this.breaking = false;
+	this.radius = 22;
+	this.mass = 10;
+
+	this.AI = function(){
+		var target = CyberCloud.player;
+
+		var xDiff = target.sprite.position.x - this.sprite.position.x;
+		var yDiff = target.sprite.position.y - this.sprite.position.y;
+
+		this.turnTowardsTarget(xDiff, yDiff);
+
+		var distanceToTarget = Math.sqrt(Math.pow(yDiff,2) + Math.pow(xDiff,2));
+
+		if(distanceToTarget > 200){
+			this.accelerating = true;
+			this.breaking = false;
+			if(distanceToTarget > 2000 && this.nitroCoolDown == 0){
+				this.nitro();
+				console.log('NITROOOOOOOOOOOO!!!!');
+			}
+		}else{
+			this.accelerating = false;
+			this.breaking = true;
+		}
+	}
+	this.turnTowardsTarget = function(xDiff, yDiff){
+		var radiansToTarget = Math.atan2(xDiff,-yDiff);
+
+		if(this.sprite.rotation > radiansToTarget+.15){
+			if(Math.abs(radiansToTarget-this.sprite.rotation)>Math.PI){
+				this.rotating_l = false;
+				this.rotating_r = true;
+			}else{
+				this.rotating_l = true;
+				this.rotating_r = false;
+			}
+		}else if(this.sprite.rotation < radiansToTarget-.15){
+			if(Math.abs(radiansToTarget-this.sprite.rotation)>Math.PI){
+				this.rotating_l = true;
+				this.rotating_r = false;
+			}else{
+				this.rotating_l = false;
+				this.rotating_r = true;
+			}
+		}else{
+			this.rotating_l = false;
+			this.rotating_r = false;
+		}
+	}
+	this.update = function(){
+
+		this.AI();
+
+		if(this.nitroCoolDown > 0){
+			this.nitroCoolDown -= CyberCloud.delta;
+		}
+		if(this.rotating_l || this.rotating_r){
+			this.spin_ship();
+		}
+		if(this.breaking){
+			this.apply_breaks();
+		}
+		if(this.accelerating){
+			this.accelerate(this.sprite.rotation, this.acceleration_rate * CyberCloud.delta);
+			this.sprite.gotoAndStop(1);
+		}else this.sprite.gotoAndStop(0);
+		var velocityX = this.velocity_x * CyberCloud.delta;
+		var velocityY = this.velocity_y * CyberCloud.delta;
+		this.updatePosition(velocityX,velocityY);
+	}
+}
+AIShip.prototype = new Ship();
 function radiansToDegrees(radians){
 	return radians*(180/Math.PI);
 }
