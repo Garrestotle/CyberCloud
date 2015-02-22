@@ -14,7 +14,6 @@ var canWidth = 800;
 var canHeight = 450;
 
 var CyberCloud = {};
-CyberCloud.projectiles = [];
 CyberCloud.gameObjects = [];
 
 function init(){
@@ -87,7 +86,7 @@ function init(){
 
 		CyberCloud.player = new PlayerShip(ship);
 		CyberCloud.npc = new AIShip(otherShip);
-		CyberCloud.gameObjects = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc, CyberCloud.projectiles);
+		CyberCloud.gameObjects = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc);
 		requestAnimationFrame(animate);
 		window.addEventListener('keydown',function(e){
 			handleKeyDown(e);
@@ -138,13 +137,7 @@ function init(){
 				CyberCloud.gameObjects[thing].update();
 			}
 		}
-		for(var projectile in CyberCloud.projectiles){
-			CyberCloud.projectiles[projectile].update();
-			if(CyberCloud.projectiles[projectile].active <= 0){
-				CyberCloud.gameLevel.removeChild(CyberCloud.projectiles[projectile].sprite);
-				CyberCloud.projectiles.splice(projectile,1);
-			}
-		}
+
 		renderer.render(stage);
 		requestAnimationFrame(animate);
 	}
@@ -319,11 +312,13 @@ function Projectile(shooter){
 	this.radius = 4;
 	this.type = "projectile";
 	this.active = 3;
-	this.sprite.position.x = shooter.xPosition + Math.cos(shooter.rotation-Math.PI/2) * shooter.radius;
-	this.sprite.position.y = shooter.yPosition + Math.sin(shooter.rotation-Math.PI/2) * shooter.radius;
+	this.sprite.position.x = shooter.xPosition + Math.cos(shooter.rotation-Math.PI/2) * Math.abs(shooter.radius);
+	this.sprite.position.y = shooter.yPosition + Math.sin(shooter.rotation-Math.PI/2) * Math.abs(shooter.radius);
 	CyberCloud.gameLevel.addChild(this.sprite);
 	CyberCloud.gameObjects.push(this);
-	this.accelerate(shooter.rotation, 300);
+	this.velocity_x = shooter.velocity_x;
+	this.velocity_y = shooter.velocity_y;
+	this.accelerate(shooter.rotation, 500);
 
 	this.IDoneBeenShot = function(){
 		this.active = 0;
@@ -331,6 +326,9 @@ function Projectile(shooter){
 
 	this.update = function(){
 		this.active -= CyberCloud.delta;
+		if(this.active <= 0){
+			this.stillExists = false;
+		}
 		this.updatePosition(this.velocity_x * CyberCloud.delta,this.velocity_y * CyberCloud.delta);
 	};
 }
@@ -406,11 +404,13 @@ function Ship(sprite){
 		}
 	};
 	this.fireLaser = function(){
-		CyberCloud.projectiles.push(new Projectile({
+		CyberCloud.gameObjects.push(new Projectile({
 			radius: this.radius + 5,
 			xPosition: this.sprite.position.x,
 			yPosition: this.sprite.position.y,
-			rotation: this.sprite.rotation
+			rotation: this.sprite.rotation,
+			velocity_x: this.velocity_x,
+			velocity_y: this.velocity_y
 		}));
 	};
 	this.update = function(){
