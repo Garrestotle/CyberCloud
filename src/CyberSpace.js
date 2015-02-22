@@ -8,11 +8,14 @@ var KEYCODE_DOWN = 40;
 //var KEYCODE_s = 83;
 var KEYCODE_ESC = 27;
 var KEYCODE_CTRL = 17;
+var KEYCODE_SPACE = 32;
 
 var canWidth = 800;
 var canHeight = 450;
 
 var CyberCloud = {};
+CyberCloud.projectiles = [];
+CyberCloud.gameObjects = [];
 
 function init(){
 
@@ -20,7 +23,7 @@ function init(){
 	var renderer = PIXI.autoDetectRenderer(canWidth,canHeight);
 	document.body.appendChild(renderer.view);
 
-	var assetsToLoad = ["graphics/playerShipSS.json","graphics/otherShipSS.json", "graphics/StarField.png", "graphics/starFieldCloseAlph.png","graphics/Planet.png", "graphics/rock.png"];
+	var assetsToLoad = ["graphics/playerShipSS.json","graphics/otherShipSS.json", "graphics/StarField.png", "graphics/starFieldCloseAlph.png","graphics/Planet.png", "graphics/rock.png", "graphics/laserBullet.png", 'graphics/alertBox.png'];
 	var loader = new PIXI.AssetLoader(assetsToLoad);
 	loader.onComplete = onAssetsLoaded;
 
@@ -48,7 +51,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(200);//Tested up to 1000
+		createRocks(254);//Tested up to 1000
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -84,7 +87,7 @@ function init(){
 
 		CyberCloud.player = new PlayerShip(ship);
 		CyberCloud.npc = new AIShip(otherShip);
-
+		CyberCloud.gameObjects = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc, CyberCloud.projectiles);
 		requestAnimationFrame(animate);
 		window.addEventListener('keydown',function(e){
 			handleKeyDown(e);
@@ -96,8 +99,8 @@ function init(){
 	}
 	function animate(){
 		calculateDelta();
-		var thingsThatCouldPossiblyCollide = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc);
-		var sectors = sortOutWhichThingsAreInWhichSector(thingsThatCouldPossiblyCollide);
+		//var CyberCloud.gameObjects = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc, CyberCloud.projectiles);
+		var sectors = sortOutWhichThingsAreInWhichSector(CyberCloud.gameObjects);
 
 		for(var x = 0; x < sectors.length; x++){
 			for(var y = 0; y < sectors[x].length; y++){
@@ -106,6 +109,10 @@ function init(){
 						for(var thing2 in sectors[x][y]){
 							if(sectors[x][y][thing1] !==  sectors[x][y][thing2]){
 								if(didCollide(sectors[x][y][thing1],sectors[x][y][thing2])){
+									if(sectors[x][y][thing1].type == "projectile" || sectors[x][y][thing2].type == "projectile"){
+										sectors[x][y][thing1].IDoneBeenShot();
+										sectors[x][y][thing2].IDoneBeenShot();
+									}
 									sectors[x][y][thing1].isColliding = true;
 									sectors[x][y][thing1].isCollidingWith = sectors[x][y][thing2];
 									sectors[x][y][thing2].isColliding = true;
@@ -122,9 +129,21 @@ function init(){
 			}
 		}
 
-		for(var thing in thingsThatCouldPossiblyCollide){
-			didItHitAWall(thingsThatCouldPossiblyCollide[thing]);
-			thingsThatCouldPossiblyCollide[thing].update();
+		for(var thing in CyberCloud.gameObjects){
+			if(!CyberCloud.gameObjects[thing].stillExists){
+				CyberCloud.gameLevel.removeChild(CyberCloud.gameObjects[thing].sprite);
+				CyberCloud.gameObjects.splice(thing,1);
+			}else{
+				didItHitAWall(CyberCloud.gameObjects[thing]);
+				CyberCloud.gameObjects[thing].update();
+			}
+		}
+		for(var projectile in CyberCloud.projectiles){
+			CyberCloud.projectiles[projectile].update();
+			if(CyberCloud.projectiles[projectile].active <= 0){
+				CyberCloud.gameLevel.removeChild(CyberCloud.projectiles[projectile].sprite);
+				CyberCloud.projectiles.splice(projectile,1);
+			}
 		}
 		renderer.render(stage);
 		requestAnimationFrame(animate);
@@ -255,10 +274,16 @@ function FloatingSpaceObject(sprite, radius){
 	this.sector = {x:0,y:0};
 	this.isColliding = false;
 	this.isCollidingWith = null;
+	this.type = "object";
+	this.stillExists = true;
 
 	this.updatePosition = function(xAmount, yAmount){
 		this.sprite.position.x += xAmount;
 		this.sprite.position.y += yAmount;
+	};
+	this.IDoneBeenShot = function(){
+		this.stillExists = false;
+		AlertBox(this.sprite.position.x, this.sprite.position.y);
 	};
 	this.deg_conv = function(angle){
 		if (angle < 0){
@@ -286,6 +311,42 @@ function FloatingSpaceObject(sprite, radius){
 		this.updatePosition(this.velocity_x * CyberCloud.delta,this.velocity_y * CyberCloud.delta);
 	};
 
+}
+function Projectile(shooter){
+	this.sprite = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/laserBullet.png'));
+		this.sprite.anchor.x = 0.5;
+		this.sprite.anchor.y = 0.5;
+	this.radius = 4;
+	this.type = "projectile";
+	this.active = 3;
+	this.sprite.position.x = shooter.xPosition + Math.cos(shooter.rotation-Math.PI/2) * shooter.radius;
+	this.sprite.position.y = shooter.yPosition + Math.sin(shooter.rotation-Math.PI/2) * shooter.radius;
+	CyberCloud.gameLevel.addChild(this.sprite);
+	CyberCloud.gameObjects.push(this);
+	this.accelerate(shooter.rotation, 300);
+
+	this.IDoneBeenShot = function(){
+		this.active = 0;
+	}
+
+	this.update = function(){
+		this.active -= CyberCloud.delta;
+		this.updatePosition(this.velocity_x * CyberCloud.delta,this.velocity_y * CyberCloud.delta);
+	};
+}
+Projectile.prototype = new FloatingSpaceObject();
+function AlertBox(x,y){
+	var sprite = new PIXI.Sprite(PIXI.Texture.fromImage('graphics/alertBox.png'));
+	sprite.anchor.x = 0.5;
+	sprite.anchor.y = 0.5;
+	sprite.position.x = x;
+	sprite.position.y = y;
+
+	CyberCloud.gameLevel.addChild(sprite);
+
+	window.setTimeout(function(){
+		CyberCloud.gameLevel.removeChild(sprite);
+	},2000);
 }
 function Ship(sprite){
 	this.sprite = sprite;
@@ -334,11 +395,24 @@ function Ship(sprite){
 	};
 	this.nitro = function(){
 		if(this.nitroCoolDown <= 0){
-			this.nitroCoolDown = 5;
-			this.accelerate(this.sprite.rotation,this.acceleration_rate*5);
+			if(this.breaking){
+				this.nitroCoolDown = 5;
+				this.velocity_x = 0;
+				this.velocity_y = 0;
+			}else if(this.accelerating){
+				this.nitroCoolDown = 5;
+				this.accelerate(this.sprite.rotation,this.acceleration_rate*5);
+			}
 		}
 	};
-
+	this.fireLaser = function(){
+		CyberCloud.projectiles.push(new Projectile({
+			radius: this.radius + 5,
+			xPosition: this.sprite.position.x,
+			yPosition: this.sprite.position.y,
+			rotation: this.sprite.rotation
+		}));
+	};
 	this.update = function(){
 		if(this.nitroCoolDown > 0){
 			this.nitroCoolDown -= CyberCloud.delta;
@@ -407,17 +481,26 @@ function AIShip(sprite){
 		this.turnTowardsTarget(xDiff, yDiff);
 
 		var distanceToTarget = Math.sqrt(Math.pow(yDiff,2) + Math.pow(xDiff,2));
+		var currentVelocity = Math.sqrt(Math.pow(this.velocity_x, 2) + Math.pow(this.velocity_y, 2));
 
 		if(distanceToTarget > 200){
 			this.accelerating = true;
-			this.breaking = false;
-			if(distanceToTarget > 2000 && this.nitroCoolDown == 0){
+			if(currentVelocity > 900){
+				this.breaking = true;
+			}else{
+				this.breaking = false;
+			}
+			if(Math.abs(distanceToTarget - currentVelocity) > 2000 && this.nitroCoolDown <= 0){
 				this.nitro();
-				console.log('NITROOOOOOOOOOOO!!!!');
+				console.log("NITROOOOOOO!");
 			}
 		}else{
 			this.accelerating = false;
 			this.breaking = true;
+			if(currentVelocity > 20 && this.nitroCoolDown <= 0){
+				this.nitro();
+				console.log("STOOOOOOOOOOP!");
+			}
 		}
 	}
 	this.turnTowardsTarget = function(xDiff, yDiff){
@@ -489,6 +572,9 @@ function handleKeyDown(e) {
 		break;
 		case KEYCODE_CTRL:
 			CyberCloud.player.nitro();
+		break;
+		case KEYCODE_SPACE:
+			CyberCloud.player.fireLaser();
 		break;
 	}
 }
