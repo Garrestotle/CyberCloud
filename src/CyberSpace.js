@@ -14,7 +14,6 @@ var canWidth = 800;
 var canHeight = 450;
 
 var CyberCloud = {};
-CyberCloud.projectiles = [];
 CyberCloud.gameObjects = [];
 
 function init(){
@@ -51,7 +50,7 @@ function init(){
 		planet.position.y = 1000;
 
 		CyberCloud.spaceRocks = [];
-		createRocks(254);//Tested up to 1000
+		createRocks(294);//Tested up to 1000
 
 		var fireWall = new PIXI.Graphics();
 		fireWall.lineStyle(15, 0xCC0000);
@@ -87,7 +86,7 @@ function init(){
 
 		CyberCloud.player = new PlayerShip(ship);
 		CyberCloud.npc = new AIShip(otherShip);
-		CyberCloud.gameObjects = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc, CyberCloud.projectiles);
+		CyberCloud.gameObjects = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc);
 		requestAnimationFrame(animate);
 		window.addEventListener('keydown',function(e){
 			handleKeyDown(e);
@@ -138,13 +137,7 @@ function init(){
 				CyberCloud.gameObjects[thing].update();
 			}
 		}
-		for(var projectile in CyberCloud.projectiles){
-			CyberCloud.projectiles[projectile].update();
-			if(CyberCloud.projectiles[projectile].active <= 0){
-				CyberCloud.gameLevel.removeChild(CyberCloud.projectiles[projectile].sprite);
-				CyberCloud.projectiles.splice(projectile,1);
-			}
-		}
+
 		renderer.render(stage);
 		requestAnimationFrame(animate);
 	}
@@ -318,11 +311,12 @@ function Projectile(shooter){
 		this.sprite.anchor.y = 0.5;
 	this.radius = 4;
 	this.type = "projectile";
-	this.active = 3;
-	this.sprite.position.x = shooter.xPosition + Math.cos(shooter.rotation-Math.PI/2) * shooter.radius;
-	this.sprite.position.y = shooter.yPosition + Math.sin(shooter.rotation-Math.PI/2) * shooter.radius;
+	this.active = 2;
+	this.sprite.position.x = shooter.xPosition + Math.cos(shooter.rotation-Math.PI/2) * Math.abs(shooter.radius);
+	this.sprite.position.y = shooter.yPosition + Math.sin(shooter.rotation-Math.PI/2) * Math.abs(shooter.radius);
 	CyberCloud.gameLevel.addChild(this.sprite);
-	CyberCloud.gameObjects.push(this);
+	this.velocity_x = shooter.velocity_x;
+	this.velocity_y = shooter.velocity_y;
 	this.accelerate(shooter.rotation, 300);
 
 	this.IDoneBeenShot = function(){
@@ -331,6 +325,9 @@ function Projectile(shooter){
 
 	this.update = function(){
 		this.active -= CyberCloud.delta;
+		if(this.active <= 0){
+			this.stillExists = false;
+		}
 		this.updatePosition(this.velocity_x * CyberCloud.delta,this.velocity_y * CyberCloud.delta);
 	};
 }
@@ -358,6 +355,7 @@ function Ship(sprite){
 	this.breaking = false;
 	this.radius = 22;
 	this.mass = 10;
+	this.gunCoolDown = 0.5;
 
 	this.apply_breaks = function(){
 		var breakSpeed = this.acceleration_rate * CyberCloud.delta * 2;
@@ -406,16 +404,25 @@ function Ship(sprite){
 		}
 	};
 	this.fireLaser = function(){
-		CyberCloud.projectiles.push(new Projectile({
-			radius: this.radius + 5,
-			xPosition: this.sprite.position.x,
-			yPosition: this.sprite.position.y,
-			rotation: this.sprite.rotation
-		}));
+		if(this.gunCoolDown <= 0){
+			this.gunCoolDown = 0.25;
+			CyberCloud.gameObjects.push(new Projectile({
+				radius: this.radius + 5,
+				xPosition: this.sprite.position.x,
+				yPosition: this.sprite.position.y,
+				rotation: this.sprite.rotation,
+				velocity_x: this.velocity_x,
+				velocity_y: this.velocity_y
+			}));
+		}
+
 	};
 	this.update = function(){
 		if(this.nitroCoolDown > 0){
 			this.nitroCoolDown -= CyberCloud.delta;
+		}
+		if(this.gunCoolDown > 0){
+			this.gunCoolDown -= CyberCloud.delta;
 		}
 		if(this.rotating_l || this.rotating_r){
 			this.spin_ship();
@@ -462,6 +469,8 @@ function PlayerShip(sprite){
 PlayerShip.prototype = new Ship();
 
 function AIShip(sprite){
+
+
 	this.sprite = sprite;
 	this.nitroCoolDown = 0;
 	this.acceleration_rate = 150;
@@ -485,21 +494,23 @@ function AIShip(sprite){
 
 		if(distanceToTarget > 200){
 			this.accelerating = true;
-			if(currentVelocity > 900){
+			//console.log(Math.atan2(xDiff,-yDiff));
+			if(Math.abs(Math.atan2(xDiff,-yDiff) - Math.atan2((this.sprite.position.x + this.velocity_x * CyberCloud.delta)-this.sprite.position.x ,-((this.sprite.position.y + this.velocity_y * CyberCloud.delta)-this.sprite.position.y))) > 0.5){
+				//console.log("SCREEEEEECH!");
 				this.breaking = true;
 			}else{
 				this.breaking = false;
 			}
 			if(Math.abs(distanceToTarget - currentVelocity) > 2000 && this.nitroCoolDown <= 0){
 				this.nitro();
-				console.log("NITROOOOOOO!");
+				//console.log("NITROOOOOOO!");
 			}
 		}else{
 			this.accelerating = false;
 			this.breaking = true;
 			if(currentVelocity > 20 && this.nitroCoolDown <= 0){
 				this.nitro();
-				console.log("STOOOOOOOOOOP!");
+				//console.log("STOOOOOOOOOOP!");
 			}
 		}
 	}
