@@ -255,6 +255,25 @@ function PlayerShip(sprite){
       }
     }
       document.getElementById('shieldPercentage').textContent = Math.floor(this.shields);
+      this.directionTowardsTarget(CyberCloud.npc.sprite.position);
+  };
+  this.directionTowardsTarget = function(targetsSpritesPosition){
+    var xDiff = '!';
+    var yDiff = '!';
+
+    if(targetsSpritesPosition.x > this.sprite.position.x + 150){
+      xDiff = 'East';
+    }else if(targetsSpritesPosition.x < this.sprite.position.x - 150){
+      xDiff = 'West';
+    }
+    if(targetsSpritesPosition.y > this.sprite.position.y + 150){
+      yDiff = 'South';
+    }else if(targetsSpritesPosition.y < this.sprite.position.y - 150){
+      yDiff = 'North';
+    }
+    if(document.getElementById('directionToTarget').textContent != yDiff + xDiff){
+      document.getElementById('directionToTarget').textContent = yDiff + xDiff
+    }
   };
 
 }

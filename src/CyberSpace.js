@@ -66,8 +66,8 @@ function init(){
 		var otherShip = new PIXI.MovieClip(otherShipTextures);
 		otherShip.anchor.x = 0.5;
 		otherShip.anchor.y = 0.5;
-		otherShip.position.x = canWidth/2 +100;
-		otherShip.position.y = canHeight/2+100;
+		otherShip.position.x = getRandomInt(CyberCloud.gameLevel.levelWidth-50,50);
+		otherShip.position.y = getRandomInt(CyberCloud.gameLevel.levelHeight-50,50);
 		otherShip.gotoAndStop(0);
 
 		CyberCloud.gameLevel.addChild(planet);
@@ -262,7 +262,8 @@ function radiansToDegrees(radians){
 }
 function createHUD(){
 	var hud = document.createElement("div");
-	hud.innerHTML = "<p id='playerShields'>Shields:<derp id='shieldPercentage'></derp>%</p>";
+	hud.innerHTML = "<p id='playerShields'>Shields:<derp id='shieldPercentage'></derp>% Direction to Target: <herp id='directionToTarget'></herp></p>";
+
 	document.body.appendChild(hud);
 
 }
