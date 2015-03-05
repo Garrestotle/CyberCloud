@@ -21,6 +21,7 @@ function init(){
 	var stage = new PIXI.Stage(0x000);
 	var renderer = PIXI.autoDetectRenderer(canWidth,canHeight);
 	document.body.appendChild(renderer.view);
+	createHUD();
 
 	var assetsToLoad = ["graphics/playerShipSS.json","graphics/otherShipSS.json", "graphics/StarField.png", "graphics/starFieldCloseAlph.png","graphics/Planet.png", "graphics/rock.png", "graphics/laserBullet.png", 'graphics/alertBox.png'];
 	var loader = new PIXI.AssetLoader(assetsToLoad);
@@ -260,6 +261,12 @@ function didItHitAWall(it){
 }
 function radiansToDegrees(radians){
 	return radians*(180/Math.PI);
+}
+function createHUD(){
+	var hud = document.createElement("div");
+	hud.innerHTML = "<p id='playerShields'>Shields:<derp id='shieldPercentage'></derp>%</p>";
+	document.body.appendChild(hud);
+
 }
 function handleKeyDown(e) {
 	switch (e.keyCode) {

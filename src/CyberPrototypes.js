@@ -96,6 +96,9 @@ function Ship(sprite){
   this.radius = 22;
   this.mass = 10;
   this.gunCoolDown = 0.5;
+  this.shields = 100;
+  this.shieldRechargeRate = 3;
+  this.shieldCoolDown = 0;
 
   this.apply_breaks = function(){
     var breakSpeed = this.acceleration_rate * CyberCloud.delta * 2;
@@ -124,184 +127,234 @@ function Ship(sprite){
       if(this.sprite.rotation < -(Math.PI))
         this.sprite.rotation += 2*Math.PI;
       }
-      if (this.rotating_r){
-        this.sprite.rotation += 4 * CyberCloud.delta;
-        if(this.sprite.rotation > Math.PI)
-          this.sprite.rotation -= 2*Math.PI;
-        }
+    if (this.rotating_r){
+      this.sprite.rotation += 4 * CyberCloud.delta;
+      if(this.sprite.rotation > Math.PI)
+        this.sprite.rotation -= 2*Math.PI;
+      }
 
-      };
-      this.nitro = function(){
-        if(this.nitroCoolDown <= 0){
-          if(this.breaking){
-            this.nitroCoolDown = 5;
-            this.velocity_x = 0;
-            this.velocity_y = 0;
-          }else if(this.accelerating){
-            this.nitroCoolDown = 5;
-            this.accelerate(this.sprite.rotation,this.acceleration_rate*5);
-          }
-        }
-      };
-      this.fireLaser = function(){
-        if(this.gunCoolDown <= 0){
-          this.gunCoolDown = 0.25;
-          CyberCloud.gameObjects.push(new Projectile({
-            radius: this.radius + 5,
-            xPosition: this.sprite.position.x,
-            yPosition: this.sprite.position.y,
-            rotation: this.sprite.rotation,
-            velocity_x: this.velocity_x,
-            velocity_y: this.velocity_y
-          }));
-        }
-
-      };
-      this.update = function(){
-        if(this.nitroCoolDown > 0){
-          this.nitroCoolDown -= CyberCloud.delta;
-        }
-        if(this.gunCoolDown > 0){
-          this.gunCoolDown -= CyberCloud.delta;
-        }
-        if(this.rotating_l || this.rotating_r){
-          this.spin_ship();
-        }
-        if(this.breaking){
-          this.apply_breaks();
-        }
-        if(this.accelerating){
-          this.accelerate(this.sprite.rotation, this.acceleration_rate * CyberCloud.delta);
-          this.sprite.gotoAndStop(1);
-        }else this.sprite.gotoAndStop(0);
-        var velocityX = this.velocity_x * CyberCloud.delta;
-        var velocityY = this.velocity_y * CyberCloud.delta;
-        this.updatePosition(velocityX,velocityY);
-
-      };
-
+  };
+  this.nitro = function(){
+    if(this.nitroCoolDown <= 0){
+      if(this.breaking){
+        this.nitroCoolDown = 5;
+        this.velocity_x = 0;
+        this.velocity_y = 0;
+      }else if(this.accelerating){
+        this.nitroCoolDown = 5;
+        this.accelerate(this.sprite.rotation,this.acceleration_rate*5);
+      }
     }
-    Ship.prototype = new FloatingSpaceObject();
+  };
+  this.fireLaser = function(){
+    if(this.gunCoolDown <= 0){
+      this.gunCoolDown = 0.25;
+      CyberCloud.gameObjects.push(new Projectile({
+        radius: this.radius + 5,
+        xPosition: this.sprite.position.x,
+        yPosition: this.sprite.position.y,
+        rotation: this.sprite.rotation,
+        velocity_x: this.velocity_x,
+        velocity_y: this.velocity_y
+      }));
+    }
 
-    function PlayerShip(sprite){
+  };
+  this.IDoneBeenShot = function(){
+    if(this.shields > 0){
+      this.shields-=25;
+    }else{
+      this.stillExists = false;
+      AlertBox(this.sprite.position.x, this.sprite.position.y);
+    }
+  };
+  this.dealWithShields = function(){
+    if(this.shields < 100){
+      if(this.shields < 0){
+        this.shields = 0;
+        this.shieldCoolDown = 10;
+      }
+      if(this.shieldCoolDown > 0){
+        this.shieldCoolDown -= CyberCloud.delta;
+      }else{
+        this.shields += CyberCloud.delta * this.shieldRechargeRate;
+      }
+    }else if(this.shields > 100){
+      this.shields = 100;
+    }
+  };
+  this.update = function(){
+    if(this.nitroCoolDown > 0){
+      this.nitroCoolDown -= CyberCloud.delta;
+    }
+    if(this.gunCoolDown > 0){
+      this.gunCoolDown -= CyberCloud.delta;
+    }
+    if(this.rotating_l || this.rotating_r){
+      this.spin_ship();
+    }
+    if(this.breaking){
+      this.apply_breaks();
+    }
+    if(this.accelerating){
+      this.accelerate(this.sprite.rotation, this.acceleration_rate * CyberCloud.delta);
+      this.sprite.gotoAndStop(1);
+    }else this.sprite.gotoAndStop(0);
+    this.dealWithShields();
+    var velocityX = this.velocity_x * CyberCloud.delta;
+    var velocityY = this.velocity_y * CyberCloud.delta;
+    this.updatePosition(velocityX,velocityY);
 
-      this.sprite = sprite;
-      this.nitroCoolDown = 0;
-      this.acceleration_rate = 150;
+  };
+
+}
+Ship.prototype = new FloatingSpaceObject();
+
+function PlayerShip(sprite){
+
+  this.sprite = sprite;
+  this.nitroCoolDown = 0;
+  this.acceleration_rate = 150;
+  this.rotating_l = false;
+  this.rotating_r = false;
+  this.accelerating = false;
+  this.breaking = false;
+  this.radius = 22;
+  this.mass = 10;
+
+  this.updatePosition = function(xAmount, yAmount){
+    this.sprite.position.x += xAmount;
+    this.sprite.position.y += yAmount;
+    CyberCloud.background.tilePosition.x -= xAmount/10;
+    CyberCloud.background.tilePosition.y -= yAmount/10;
+    CyberCloud.lessBackBackground.tilePosition.x -= xAmount/4;
+    CyberCloud.lessBackBackground.tilePosition.y -= yAmount/4;
+    CyberCloud.gameLevel.position.x -= xAmount;
+    CyberCloud.gameLevel.position.y -= yAmount;
+  };
+  this.dealWithShields = function(){
+    if(this.shields < 100){
+      if(this.shields < 0){
+        this.shields = 0;
+        this.shieldCoolDown = 10;
+      }
+      if(this.shieldCoolDown > 0){
+        this.shieldCoolDown -= CyberCloud.delta;
+      }else{
+        this.shields += CyberCloud.delta * this.shieldRechargeRate;
+      }
+    }else if(this.shields > 100){
+      this.shields = 100;
+    }
+    if(document.getElementById('shieldPercentage').textContent != Math.floor(this.shields)){
+      if(this.shields > 60){
+        document.getElementById('playerShields').style.color = 'green';
+      }else if(this.shields > 30){
+        document.getElementById('playerShields').style.color = '#550';
+      }else{
+        document.getElementById('playerShields').style.color = 'red';
+      }
+    }
+      document.getElementById('shieldPercentage').textContent = Math.floor(this.shields);
+  };
+
+}
+PlayerShip.prototype = new Ship();
+
+function AIShip(sprite){
+
+
+  this.sprite = sprite;
+  this.nitroCoolDown = 0;
+  this.acceleration_rate = 150;
+  this.rotating_l = false;
+  this.rotating_r = false;
+  this.accelerating = false;
+  this.breaking = false;
+  this.radius = 22;
+  this.mass = 10;
+
+  this.AI = function(){
+    var target = CyberCloud.player;
+
+    var xDiff = target.sprite.position.x - this.sprite.position.x;
+    var yDiff = target.sprite.position.y - this.sprite.position.y;
+
+    this.turnTowardsTarget(xDiff, yDiff);
+
+    var distanceToTarget = Math.sqrt(Math.pow(yDiff,2) + Math.pow(xDiff,2));
+    var currentVelocity = Math.sqrt(Math.pow(this.velocity_x, 2) + Math.pow(this.velocity_y, 2));
+
+    if(distanceToTarget > 200){
+      this.accelerating = true;
+      //console.log(Math.atan2(xDiff,-yDiff));
+      if(Math.abs(Math.atan2(xDiff,-yDiff) - Math.atan2((this.sprite.position.x + this.velocity_x * CyberCloud.delta)-this.sprite.position.x ,-((this.sprite.position.y + this.velocity_y * CyberCloud.delta)-this.sprite.position.y))) > 0.5){
+        //console.log("SCREEEEEECH!");
+        this.breaking = true;
+      }else{
+        this.breaking = false;
+      }
+      if(Math.abs(distanceToTarget - currentVelocity) > 2000 && this.nitroCoolDown <= 0){
+        this.nitro();
+        //console.log("NITROOOOOOO!");
+      }
+    }else{
+      this.accelerating = false;
+      if(currentVelocity > 0){
+        this.breaking = true;
+        if(currentVelocity > 40 && this.nitroCoolDown <= 0){
+          this.nitro();
+          //console.log("STOOOOOOOOOOP!");
+        }
+      }else{
+        this.breaking = false;
+      }
+    }
+  }
+  this.turnTowardsTarget = function(xDiff, yDiff){
+    var radiansToTarget = Math.atan2(xDiff,-yDiff);
+
+    if(this.sprite.rotation > radiansToTarget+.15){
+      if(Math.abs(radiansToTarget-this.sprite.rotation)>Math.PI){
+        this.rotating_l = false;
+        this.rotating_r = true;
+      }else{
+        this.rotating_l = true;
+        this.rotating_r = false;
+      }
+    }else if(this.sprite.rotation < radiansToTarget-.15){
+      if(Math.abs(radiansToTarget-this.sprite.rotation)>Math.PI){
+        this.rotating_l = true;
+        this.rotating_r = false;
+      }else{
+        this.rotating_l = false;
+        this.rotating_r = true;
+      }
+    }else{
       this.rotating_l = false;
       this.rotating_r = false;
-      this.accelerating = false;
-      this.breaking = false;
-      this.radius = 22;
-      this.mass = 10;
-
-      this.updatePosition = function(xAmount, yAmount){
-        this.sprite.position.x += xAmount;
-        this.sprite.position.y += yAmount;
-        CyberCloud.background.tilePosition.x -= xAmount/10;
-        CyberCloud.background.tilePosition.y -= yAmount/10;
-        CyberCloud.lessBackBackground.tilePosition.x -= xAmount/4;
-        CyberCloud.lessBackBackground.tilePosition.y -= yAmount/4;
-        CyberCloud.gameLevel.position.x -= xAmount;
-        CyberCloud.gameLevel.position.y -= yAmount;
-      };
     }
-    PlayerShip.prototype = new Ship();
+  }
+  this.update = function(){
 
-    function AIShip(sprite){
+    this.AI();
 
-
-      this.sprite = sprite;
-      this.nitroCoolDown = 0;
-      this.acceleration_rate = 150;
-      this.rotating_l = false;
-      this.rotating_r = false;
-      this.accelerating = false;
-      this.breaking = false;
-      this.radius = 22;
-      this.mass = 10;
-
-      this.AI = function(){
-        var target = CyberCloud.player;
-
-        var xDiff = target.sprite.position.x - this.sprite.position.x;
-        var yDiff = target.sprite.position.y - this.sprite.position.y;
-
-        this.turnTowardsTarget(xDiff, yDiff);
-
-        var distanceToTarget = Math.sqrt(Math.pow(yDiff,2) + Math.pow(xDiff,2));
-        var currentVelocity = Math.sqrt(Math.pow(this.velocity_x, 2) + Math.pow(this.velocity_y, 2));
-
-        if(distanceToTarget > 200){
-          this.accelerating = true;
-          //console.log(Math.atan2(xDiff,-yDiff));
-          if(Math.abs(Math.atan2(xDiff,-yDiff) - Math.atan2((this.sprite.position.x + this.velocity_x * CyberCloud.delta)-this.sprite.position.x ,-((this.sprite.position.y + this.velocity_y * CyberCloud.delta)-this.sprite.position.y))) > 0.5){
-            //console.log("SCREEEEEECH!");
-            this.breaking = true;
-          }else{
-            this.breaking = false;
-          }
-          if(Math.abs(distanceToTarget - currentVelocity) > 2000 && this.nitroCoolDown <= 0){
-            this.nitro();
-            //console.log("NITROOOOOOO!");
-          }
-        }else{
-          this.accelerating = false;
-          if(currentVelocity > 0){
-            this.breaking = true;
-            if(currentVelocity > 40 && this.nitroCoolDown <= 0){
-              this.nitro();
-              //console.log("STOOOOOOOOOOP!");
-            }
-          }else{
-            this.breaking = false;
-          }
-        }
-      }
-      this.turnTowardsTarget = function(xDiff, yDiff){
-        var radiansToTarget = Math.atan2(xDiff,-yDiff);
-
-        if(this.sprite.rotation > radiansToTarget+.15){
-          if(Math.abs(radiansToTarget-this.sprite.rotation)>Math.PI){
-            this.rotating_l = false;
-            this.rotating_r = true;
-          }else{
-            this.rotating_l = true;
-            this.rotating_r = false;
-          }
-        }else if(this.sprite.rotation < radiansToTarget-.15){
-          if(Math.abs(radiansToTarget-this.sprite.rotation)>Math.PI){
-            this.rotating_l = true;
-            this.rotating_r = false;
-          }else{
-            this.rotating_l = false;
-            this.rotating_r = true;
-          }
-        }else{
-          this.rotating_l = false;
-          this.rotating_r = false;
-        }
-      }
-      this.update = function(){
-
-        this.AI();
-
-        if(this.nitroCoolDown > 0){
-          this.nitroCoolDown -= CyberCloud.delta;
-        }
-        if(this.rotating_l || this.rotating_r){
-          this.spin_ship();
-        }
-        if(this.breaking){
-          this.apply_breaks();
-        }
-        if(this.accelerating){
-          this.accelerate(this.sprite.rotation, this.acceleration_rate * CyberCloud.delta);
-          this.sprite.gotoAndStop(1);
-        }else this.sprite.gotoAndStop(0);
-        var velocityX = this.velocity_x * CyberCloud.delta;
-        var velocityY = this.velocity_y * CyberCloud.delta;
-        this.updatePosition(velocityX,velocityY);
-      }
+    if(this.nitroCoolDown > 0){
+      this.nitroCoolDown -= CyberCloud.delta;
     }
-    AIShip.prototype = new Ship();
+    if(this.rotating_l || this.rotating_r){
+      this.spin_ship();
+    }
+    if(this.breaking){
+      this.apply_breaks();
+    }
+    if(this.accelerating){
+      this.accelerate(this.sprite.rotation, this.acceleration_rate * CyberCloud.delta);
+      this.sprite.gotoAndStop(1);
+    }else this.sprite.gotoAndStop(0);
+    var velocityX = this.velocity_x * CyberCloud.delta;
+    var velocityY = this.velocity_y * CyberCloud.delta;
+    this.updatePosition(velocityX,velocityY);
+  }
+}
+AIShip.prototype = new Ship();
