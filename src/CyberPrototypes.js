@@ -29,7 +29,6 @@ function FloatingSpaceObject(sprite, radius){
     return angle;
   };
   this.accelerate = function(directionInRadians, acceleration){
-    //acceleration = acceleration * CyberCloud.delta;
     var degree = radiansToDegrees(directionInRadians);
     degree = this.deg_conv(degree);
 
@@ -287,16 +286,13 @@ function AIShip(sprite){
 
     if(distanceToTarget > 200){
       this.accelerating = true;
-      //console.log(Math.atan2(xDiff,-yDiff));
       if(Math.abs(Math.atan2(xDiff,-yDiff) - Math.atan2((this.sprite.position.x + this.velocity_x * CyberCloud.delta)-this.sprite.position.x ,-((this.sprite.position.y + this.velocity_y * CyberCloud.delta)-this.sprite.position.y))) > 0.5){
-        //console.log("SCREEEEEECH!");
         this.breaking = true;
       }else{
         this.breaking = false;
       }
       if(Math.abs(distanceToTarget - currentVelocity) > 2000 && this.nitroCoolDown <= 0){
         this.nitro();
-        //console.log("NITROOOOOOO!");
       }
     }else{
       this.accelerating = false;
@@ -304,7 +300,6 @@ function AIShip(sprite){
         this.breaking = true;
         if(currentVelocity > 40 && this.nitroCoolDown <= 0){
           this.nitro();
-          //console.log("STOOOOOOOOOOP!");
         }
       }else{
         this.breaking = false;

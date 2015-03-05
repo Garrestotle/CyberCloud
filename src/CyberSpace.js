@@ -99,7 +99,6 @@ function init(){
 	}
 	function animate(){
 		calculateDelta();
-		//var CyberCloud.gameObjects = CyberCloud.spaceRocks.concat(CyberCloud.player, CyberCloud.npc, CyberCloud.projectiles);
 		var sectors = sortOutWhichThingsAreInWhichSector(CyberCloud.gameObjects);
 
 		for(var x = 0; x < sectors.length; x++){
@@ -161,7 +160,6 @@ function sortOutWhichThingsAreInWhichSector(things){
 	}
 	for(var thing in things){
 		things[thing].sector.x = Math.abs(Math.floor(things[thing].sprite.position.x/1000));
-		//if(things[thing].sprite.position.x == NaN) console.log(thing);
 		things[thing].sector.y = Math.abs(Math.floor(things[thing].sprite.position.y/1000));
 		if(sectors[things[thing].sector.x] === undefined){
 			console.log(things[thing].sector.x);
