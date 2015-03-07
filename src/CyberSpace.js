@@ -133,8 +133,9 @@ function init(){
 				CyberCloud.gameLevel.removeChild(CyberCloud.gameObjects[thing].sprite);
 				CyberCloud.gameObjects.splice(thing,1);
 			}else{
-				didItHitAWall(CyberCloud.gameObjects[thing]);
+
 				CyberCloud.gameObjects[thing].update();
+				didItHitAWall(CyberCloud.gameObjects[thing]);
 			}
 		}
 

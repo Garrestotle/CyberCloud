@@ -11,6 +11,13 @@ function FloatingSpaceObject(sprite, radius){
   this.stillExists = true;
 
   this.updatePosition = function(xAmount, yAmount){
+    if(this.sprite.position.x+xAmount > CyberCloud.gameLevel.levelWidth){
+      console.log(this.sprite.position.x);
+      console.log(xAmount);
+    }else if(this.sprite.position.y+yAmount > CyberCloud.gameLevel.levelHeight){
+      console.log(this.sprite.position.y);
+      console.log(yAmount);
+    }
     this.sprite.position.x += xAmount;
     this.sprite.position.y += yAmount;
   };
@@ -202,7 +209,7 @@ function Ship(sprite){
     this.dealWithShields();
     var velocityX = this.velocity_x * CyberCloud.delta;
     var velocityY = this.velocity_y * CyberCloud.delta;
-    this.updatePosition(velocityX,velocityY);
+    this.updatePosition(this.velocity_x * CyberCloud.delta,this.velocity_y * CyberCloud.delta);
 
   };
 
@@ -368,7 +375,8 @@ function AIShip(sprite){
     }else this.sprite.gotoAndStop(0);
     var velocityX = this.velocity_x * CyberCloud.delta;
     var velocityY = this.velocity_y * CyberCloud.delta;
-    this.updatePosition(velocityX,velocityY);
+    this.updatePosition(this.velocity_x * CyberCloud.delta,this.velocity_y * CyberCloud.delta);
+    this.dealWithShields();
   }
 }
 AIShip.prototype = new Ship();
