@@ -11,10 +11,10 @@ function FloatingSpaceObject(sprite, radius){
   this.stillExists = true;
 
   this.updatePosition = function(xAmount, yAmount){
-    if(this.sprite.position.x+xAmount > CyberCloud.gameLevel.levelWidth){
+    if(this.sprite.position.x+xAmount > CyberCloud.gameLevel.levelWidth || this.sprite.position.x+xAmount < 0){
       console.log(this.sprite.position.x);
       console.log(xAmount);
-    }else if(this.sprite.position.y+yAmount > CyberCloud.gameLevel.levelHeight){
+    }else if(this.sprite.position.y+yAmount > CyberCloud.gameLevel.levelHeight || this.sprite.position.y+yAmount < 0){
       console.log(this.sprite.position.y);
       console.log(yAmount);
     }
@@ -43,6 +43,8 @@ function FloatingSpaceObject(sprite, radius){
     var diffy = Math.sin(degree * (Math.PI / 180)) * acceleration;
     this.velocity_x += diffx;
     this.velocity_y += diffy;
+    if(this.velocity_x == NaN)
+      console.log(diffx);
 
   };
 

@@ -133,7 +133,7 @@ function init(){
 				CyberCloud.gameLevel.removeChild(CyberCloud.gameObjects[thing].sprite);
 				CyberCloud.gameObjects.splice(thing,1);
 			}else{
-
+				//didItHitAWall(CyberCloud.gameObjects[thing]);
 				CyberCloud.gameObjects[thing].update();
 				didItHitAWall(CyberCloud.gameObjects[thing]);
 			}
@@ -160,8 +160,8 @@ function sortOutWhichThingsAreInWhichSector(things){
 		}
 	}
 	for(var thing in things){
-		things[thing].sector.x = Math.abs(Math.floor(things[thing].sprite.position.x/1000));
-		things[thing].sector.y = Math.abs(Math.floor(things[thing].sprite.position.y/1000));
+		things[thing].sector.x = Math.floor(things[thing].sprite.position.x/1000);
+		things[thing].sector.y = Math.floor(things[thing].sprite.position.y/1000);
 		if(sectors[things[thing].sector.x] === undefined){
 			console.log(things[thing].sector.x);
 			console.log(things[thing]);
@@ -241,10 +241,6 @@ function calculateCollision(collidingThing1,collidingThing2){
 function didItHitAWall(it){
 	if(it.sprite.position.x < it.radius){
 		it.velocity_x = -(it.velocity_x/2);
-		if((it.radius-it.sprite.position.x+1) > 1000){
-			console.log(it.radius);
-			console.log(it.sprite.position.x);
-		}
 		it.updatePosition((it.radius-it.sprite.position.x+1),0);
 	}else if(it.sprite.position.x > CyberCloud.gameLevel.levelWidth - it.radius){
 		it.velocity_x = -(it.velocity_x/2);
