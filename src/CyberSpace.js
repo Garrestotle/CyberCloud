@@ -10,6 +10,9 @@ var KEYCODE_ESC = 27;
 var KEYCODE_CTRL = 17;
 var KEYCODE_SPACE = 32;
 
+var hasGamePad = false;
+var gamePad;
+
 var canWidth = 800;
 var canHeight = 450;
 
@@ -17,6 +20,22 @@ var CyberCloud = {};
 CyberCloud.gameObjects = [];
 
 function init(){
+
+	window.addEventListener("gamepadconnected", function(e) {
+	  console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+	    e.gamepad.index, e.gamepad.id,
+	    e.gamepad.buttons.length, e.gamepad.axes.length);
+		alert("Gamepad successfully connected.");
+		hasGamePad = true;
+		gamePad = navigator.getGamepads()[e.gamepad.index];
+	});
+
+	window.addEventListener("gamepaddisconnected", function(e) {
+	  console.log("Gamepad disconnected from index %d: %s",
+	    e.gamepad.index, e.gamepad.id);
+		alert("Gamepad disconnected.");
+		hasGamePad = false;
+	});
 
 	var stage = new PIXI.Stage(0x000);
 	var renderer = PIXI.autoDetectRenderer(canWidth,canHeight);
