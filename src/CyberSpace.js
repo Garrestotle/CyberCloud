@@ -158,6 +158,10 @@ function init(){
 			}
 		}
 
+		if(hasGamePad){
+			CyberCloud.player.handleGamePad(gamePad);
+		}
+
 		renderer.render(stage);
 		requestAnimationFrame(animate);
 	}

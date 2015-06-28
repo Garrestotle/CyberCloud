@@ -240,6 +240,24 @@ function PlayerShip(sprite){
     CyberCloud.gameLevel.position.x -= xAmount;
     CyberCloud.gameLevel.position.y -= yAmount;
   };
+  this.handleGamePad = function(gp){
+
+    this.rotating_l = false;
+    this.rotating_r = false;
+    this.accelerating = false;
+    this.breaking = false;
+
+    if(gp.axes[0] > 0.75){
+      this.rotating_r = true;
+    }else if(gp.axes[0] < -0.75){
+      this.rotating_l = true;
+    }
+    if(gp.buttons[6]) this.accelerating = true;
+    if(gp.buttons[4]) this.nitro();
+    if(gp.buttons[7]) this.breaking = true;
+    if(gp.buttons[0]) this.fireLaser();
+
+  }
   this.dealWithShields = function(){
     if(this.shields < 100){
       if(this.shields < 0){
