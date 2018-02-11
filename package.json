@@ -1,0 +1,23 @@
+{
+  "name": "cyber-cloud",
+  "version": "1.0.0",
+  "description": "2D Space Ships",
+  "main": "app.js",
+  "dependencies": {
+    "express": "^4.15.3"
+  },
+  "devDependencies": {
+    "browserify": "^14.4.0",
+    "watchify": "^3.9.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "devMode": "node ./node_modules/watchify/bin/cmd.js ./src/main.js -o ./public/CyberCloud.js",
+    "build": "node ./node_modules/browserify/bin/cmd.js ./src/main.js -o ./public/CyberCloud.js"
+  },
+  "keywords": [
+    "game"
+  ],
+  "author": "Garrett Calpouzos",
+  "license": "Beerware"
+}

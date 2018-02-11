@@ -9,6 +9,6 @@ var dir = function dir(req, res){
   res.sendfile('./window.html');
 };
 
-app.use('/',express.static(__dirname));
+app.use(express.static('public'));
 
 app.get('/',dir);
